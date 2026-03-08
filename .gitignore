@@ -1,1 +1,6 @@
+# Usual locations for these
+install
+mods
+
+# Do not expose
 .env
