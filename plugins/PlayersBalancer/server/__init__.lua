@@ -22,7 +22,7 @@ local function init()
     if wsSettings ~= nil then
         wsSettings.autoBalanceTeamsOnNeutral = false
     end
-    print("Disabled traditional team balancing in favour for BotBalancer's")
+    print("Disabled traditional team balancing in favour for PlayersBalancer's")
 
     -- If config shuffler not enabled then do not shuffle the teams
     if Config.enableShuffler == true then
