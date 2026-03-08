@@ -12,5 +12,9 @@ Config = {
 if Config.botDensity < 0 or Config.botDensity > 1 then
     error("Bot density must be between 0 and 1.")
 end
+if (os.getenv("KYBER_MODULE_CHANNEL") or "stable") ~= "stable" then
+    error(
+        "PlayersBalancer plugin is only compatible with the stable channel. Either modify the plugin yourself, or change back to the stable channel.")
+end
 
 return Config

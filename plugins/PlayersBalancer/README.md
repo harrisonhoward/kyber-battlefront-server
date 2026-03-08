@@ -3,6 +3,12 @@
 This plugins automatically balances, shuffles players and fills empty slots with bots.\
 This took a huge inspiration from [BotsBalancer Plugin Example](https://github.com/ArmchairDevelopers/PluginExamples/tree/main/BotBalancer).
 
+## Supported Channel
+
+_This will require modification to work on the beta channel_
+
+`stable`
+
 ## Configuration
 
 You can configure the plugin by setting the following environment variables in your `.env` file:
