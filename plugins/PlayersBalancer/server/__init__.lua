@@ -104,7 +104,3 @@ EventManager.Listen("Server:PlayerJoined", function(player)
     PlayerService:BalancePlayer(player, TeamService:GetTeamCounts())
     TeamService:BalanceBots()
 end)
-
-EventManager.Listen("Server:PlayerLeave", function(_player)
-    TeamService:BalanceBots()
-end)
