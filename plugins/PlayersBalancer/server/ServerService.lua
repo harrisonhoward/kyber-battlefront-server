@@ -1,4 +1,4 @@
-local Config = require("config")
+local Config = require "config"
 
 -- The gamemodes the balancer should be active for
 local whitelistedGameModes = {
@@ -15,7 +15,6 @@ local whitelistedGameModes = {
 
 ---@class ServerService
 ---@field serverInitialised boolean -- Track the server has initialised
----@field serverLoaded boolean -- Track the server is loading into a map
 ---@field gameModes table<string, GameMode>
 ---@field activeGameMode GameMode|nil
 ---@field AddGameMode fun(self: ServerService, instance: InformationAsset)
@@ -23,7 +22,6 @@ local whitelistedGameModes = {
 ---@field GetTeamCounts fun(self: ServerService): { team1: number, team2: number }
 ServerService = {
     serverInitialised = false,
-    serverLoaded = false,
     gameModes = {},
     activeGameMode = nil,
 

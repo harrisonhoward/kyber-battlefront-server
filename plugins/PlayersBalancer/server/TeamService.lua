@@ -1,9 +1,8 @@
-local Config = require("config")
-local ServerService = require("ServerService")
-local PlayerService = require("PlayerService")
+local Config = require "config"
+local ServerService = require "ServerService"
+local PlayerService = require "PlayerService"
 
 ---@class TeamService
----@field botBalancingEnabled boolean
 ---@field GetAutoPlayerSettings fun(self: TeamService, silent?: boolean): table|nil -- Console.GetSettings with extra handling
 ---@field GetTeamCounts fun(self: TeamService): { team1: number, team2: number }
 ---@field GetPlayerCount fun(self: TeamService): number -- Player count without bots
@@ -11,10 +10,9 @@ local PlayerService = require("PlayerService")
 ---@field ResetBots fun(self: TeamService) -- Resets the bot counts and active gamemode back to 0
 ---@field RandomiseTeams fun(self: TeamService)
 TeamService = {
-    botBalancingEnabled = true,
 
     GetAutoPlayerSettings = function(self, silent)
-        if ServerService.activeGameMode == nil or self.botBalancingEnabled == false then
+        if ServerService.activeGameMode == nil then
             return nil
         end
 
@@ -23,8 +21,7 @@ TeamService = {
             if silent ~= true then
                 return
             end
-            print("AutoPlayer settings not found! Bot balancing disabled")
-            self.botBalancingEnabled = false
+            print("AutoPlayer settings not found!")
             return nil
         end
 
@@ -144,7 +141,7 @@ TeamService = {
             table.insert(randomTeamList, 2)
         end
 
-        -- Shuffle a fisher yates shuffle
+        -- Fisher yates shuffle
         for i = #randomTeamList, 2, -1 do
             local j = math.random(i)
             randomTeamList[i], randomTeamList[j] = randomTeamList[j], randomTeamList[i]

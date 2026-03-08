@@ -1,7 +1,7 @@
-local Config = require("config")
-local ServerService = require("ServerService")
-local TeamService = require("TeamService")
-local PlayerService = require("PlayerService")
+local Config = require "config"
+local ServerService = require "ServerService"
+local TeamService = require "TeamService"
+local PlayerService = require "PlayerService"
 
 local function init()
     print(
@@ -31,27 +31,6 @@ local function init()
     TeamService:BalanceBots()
 end
 
--- We need to initialise the server.
--- We can't rely on LevelLoaded because sometimes its call too soon and crashes when we call PlayerManager.GetPlayers()
-EventManager.Listen("Server:UpdatePre", function()
-    if ServerService.serverLoaded == true then
-        return
-    end
-
-    if ServerService.serverInitialised == false then
-        return
-    end
-
-    if TeamService:GetAutoPlayerSettings(true) == nil then
-        return
-    end
-
-    if ServerService.serverLoaded == false then
-        init()
-        ServerService.serverLoaded = true
-    end
-end)
-
 -- No event for player leaving on STABLE. This is a workaround to balance every 5 seconds instead.
 local elapsedTime = 0
 EventManager.Listen("Server:UpdatePre", function(delta)
@@ -64,6 +43,7 @@ end)
 
 EventManager.Listen("Server:Init", function()
     ServerService.serverInitialised = true
+    init()
 end)
 
 -- Triggered by a game file that can contain vital gamemode information for us.
@@ -90,7 +70,8 @@ EventManager.Listen("Level:Loaded", function(_levelName, gameModeId)
 
     ServerService.activeGameMode = ServerService.gameModes[gameModeId]
 
-    if ServerService.serverLoaded == true then
+    -- Only run on subsequent level loads (e.g. map changes)
+    if ServerService.serverInitialised == true then
         init()
     end
 end)
