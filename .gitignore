@@ -2,5 +2,8 @@
 install
 mods
 
+# Make sure plugin bundles are ignored
+*.kbplugin
+
 # Do not expose
 .env
