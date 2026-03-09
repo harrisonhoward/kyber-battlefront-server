@@ -3,6 +3,7 @@
 if [ ! -e ./.env ]; then
   touch ./.env
 fi
+source ./.env
 
 # This script will go through all directories relative to its location.
 # It will zip the contents of the each directory and name the zip file 'DIRNAME.kbplugin'.

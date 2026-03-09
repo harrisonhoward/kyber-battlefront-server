@@ -3,6 +3,7 @@
 if [ ! -e ./.env ]; then
   touch ./.env
 fi
+source ./.env
 
 # User must define these
 if [ -z "$EA_EMAIL" ] || [ -z "$EA_PASSWORD" ] || [ -z "$KYBER_TOKEN" ] || [ -z "$KYBER_SERVER_NAME" ] || [ -z "$KYBER_INSTALL_PATH" ]; then
