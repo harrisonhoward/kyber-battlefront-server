@@ -40,6 +40,11 @@ fi
 # Loop through the list of enabled plugins from the .env file
 IFS=',' read -ra PLUGINS <<< "$KYBER_ENABLED_PLUGINS"
 for PLUGIN in "${PLUGINS[@]}"; do
+  # Reject plugin names containing path separators or the bare '..' component to prevent path traversal
+  if [[ "$PLUGIN" == */* ]] || [[ "$PLUGIN" == ".." ]]; then
+    echo "Skipping invalid plugin name: '$PLUGIN' (must not contain '/' or be '..')"
+    continue
+  fi
   PLUGIN_DIR="$WORKING_DIR/$PLUGIN"
   if [ -d "$PLUGIN_DIR" ] && [ -f "$PLUGIN_DIR/plugin.json" ]; then
     (cd "$PLUGIN_DIR" && zip -r "$WORKING_DIR/$PLUGIN.kbplugin" .)
