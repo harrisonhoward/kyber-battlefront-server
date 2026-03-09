@@ -2,6 +2,7 @@
 
 source ./.env
 
+
 # User must define these
 if [ -z "$EA_EMAIL" ] || [ -z "$EA_PASSWORD" ] || [ -z "$KYBER_TOKEN" ] || [ -z "$KYBER_SERVER_NAME" ] || [ -z "$KYBER_INSTALL_PATH" ]; then
   echo "Please set EA_EMAIL, EA_PASSWORD, KYBER_TOKEN, KYBER_SERVER_NAME, and KYBER_INSTALL_PATH in the env file."
@@ -77,6 +78,9 @@ if [ -n "$KYBER_SERVER_PLUGINS_PATH" ]; then
     -v "$KYBER_SERVER_PLUGINS_SOURCE:$KYBER_SERVER_PLUGINS_PATH"
   )
 fi
+
+# Run the plugins bundler
+./plugin_bundler.sh
 
 sudo docker run \
   "${docker_args[@]}" \
