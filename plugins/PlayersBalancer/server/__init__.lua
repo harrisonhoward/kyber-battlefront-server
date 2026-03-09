@@ -43,7 +43,6 @@ end)
 
 EventManager.Listen("Server:Init", function()
     ServerService.serverInitialised = true
-    init()
 end)
 
 -- Triggered by a game file that can contain vital gamemode information for us.
