@@ -70,15 +70,8 @@ Follow the instructions depending on the distro you chose [Kyber Docs](https://d
     kyber_cli download_game -p ~/battlefront/install -t <your_ea_token>
     ```
 
-4. Run the `plugin_bundler.sh` script to bundle the plugins:
-
-    ```bash
-    cd ~/battlefront
-    ./plugin_bundler.sh
-    ```
-
-5. Create a `.env` file using the `.env.example` file as a template and fill in the required values (e.g. `~/battlefront/.env`)
-6. Run the `start_server.sh` script to start the server:
+4. Create a `.env` file using the `.env.example` file as a template and fill in the required values (e.g. `~/battlefront/.env`)
+5. Run the `start_server.sh` script to start the server:
 
     ```bash
     cd ~/battlefront
