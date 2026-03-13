@@ -11,6 +11,16 @@ This repository is to assist others in setting up their own server.
 - **CPU**: Intel Core i7-7700K @ 4.20GHz
 - **Memory**: 16 GB DDR4 @ 2400 MHz
 
+## Start Server Flags
+
+This is a list of supported flags for the `start_battlefront.sh` script.
+
+- `--server-name`: This allows you to override the server name specified in the `.env` file. This is useful if you want to have multiple servers running with different names.
+- `--mode` (default: `conquest`): This allows you to specify the game mode to run.
+    - Supported modes:
+        - `conquest` (Conquest)
+        - `galactic` (Galactic Assault)
+
 ## Installation
 
 _I installed Debian from Windows Server 2025 Standard (which hosts my other servers)_
