@@ -60,19 +60,19 @@ conquest_maps=(
 )
 
 galactic_maps=(
-  "IOIGANoFun;Levels/MP/Kashyyyk_01/Kashyyyk_01"
-  "IOIGANoFun;S1/Levels/Crait_01/Crait_01"
-  "IOIGANoFun;Levels/MP/Takodana_01/Takodana_01"
-  "IOIGANoFun;Levels/MP/Yavin_01/Yavin_01"
-  "IOIGANoFun;S5_1/Levels/MP/Geonosis_01/Geonosis_01"
-  "IOIGANoFun;Levels/MP/DeathStar02_01/DeathStar02_01"
-  "IOIGANoFun;Levels/MP/StarKiller_01/StarKiller_01"
-  "IOIGANoFun;Levels/MP/Kamino_01/Kamino_01"
-  "IOIGANoFun;Levels/MP/Jakku_01/Jakku_01"
-  "IOIGANoFun;Levels/MP/Endor_01/Endor_01"
-  "IOIGANoFun;Levels/MP/Tatooine_01/Tatooine_01"
-  "IOIGANoFun;Levels/MP/Hoth_01/Hoth_01"
-  "IOIGANoFun;Levels/MP/Naboo_01/Naboo_01"
+    "PlanetaryBattles;S1/Levels/Crait_01/Crait_01"
+    "PlanetaryBattles;Levels/MP/Jakku_01/Jakku_01"
+    "PlanetaryBattles;Levels/MP/Takodana_01/Takodana_01"
+    "PlanetaryBattles;Levels/MP/DeathStar02_01/DeathStar02_01"
+    "PlanetaryBattles;S5_1/Levels/MP/Geonosis_01/Geonosis_01"
+    "PlanetaryBattles;Levels/MP/Yavin_01/Yavin_01"
+    "PlanetaryBattles;Levels/MP/StarKiller_01/StarKiller_01"
+    "PlanetaryBattles;Levels/MP/Kashyyyk_01/Kashyyyk_01"
+    "PlanetaryBattles;Levels/MP/Tatooine_01/Tatooine_01"
+    "PlanetaryBattles;Levels/MP/Hoth_01/Hoth_01"
+    "PlanetaryBattles;Levels/MP/Endor_01/Endor_01"
+    "PlanetaryBattles;Levels/MP/Kamino_01/Kamino_01"
+    "PlanetaryBattles;Levels/MP/Naboo_01/Naboo_01"
 )
 
 
