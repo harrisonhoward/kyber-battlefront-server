@@ -2,21 +2,41 @@
 
 source ./.env
 
+# Print usage information
+usage() {
+  echo "Usage: $0 [--mode MODE] [--server-name NAME]"
+  echo
+  echo "Options:"
+  echo "  --mode MODE           Game mode to use (default: conquest)"
+  echo "  --server-name NAME    Server name to use"
+}
+
 # Flags processing
 mode="conquest"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mode)
+      if [ $# -lt 2 ] || [ -z "$2" ]; then
+        echo "Error: --mode requires a non-empty argument."
+        usage
+        exit 1
+      fi
       mode="$2"
       shift 2
       ;;
     --server-name)
+      if [ $# -lt 2 ] || [ -z "$2" ]; then
+        echo "Error: --server-name requires a non-empty argument."
+        usage
+        exit 1
+      fi
       KYBER_SERVER_NAME="$2"
       shift 2
       ;;
     *)
       echo "Unknown flag: $1"
+      usage
       exit 1
       ;;
   esac
