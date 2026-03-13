@@ -2,6 +2,59 @@
 
 source ./.env
 
+# Flags processing
+mode="conquest"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --mode)
+      mode="$2"
+      shift 2
+      ;;
+    --server-name)
+      KYBER_SERVER_NAME="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown flag: $1"
+      exit 1
+      ;;
+  esac
+done
+
+
+conquest_maps=(
+    "Mode1;S9/Paintball/Levels/MP/Paintball_01/Paintball_01"
+    "Mode1;Levels/MP/DeathStar02_01/DeathStar02_01"
+    "Mode1;S7_2/Levels/Naboo_03/Naboo_03"
+    "Mode1;S6_2/Geonosis_02/Levels/Geonosis_02/Geonosis_02"
+    "Mode1;S7_1/Levels/Kamino_03/Kamino_03"
+    "Mode1;S7/Levels/Kashyyyk_02/Kashyyyk_02"
+    "Mode1;S9_3/Tatooine_02/Tatooine_02"
+    "Mode1;Levels/MP/Yavin_01/Yavin_01"
+    "Mode1;S9_3/Scarif/Levels/MP/Scarif_02/Scarif_02"
+    "Mode1;S9/Jakku_02/Jakku_02"
+    "Mode1;S9/Takodana_02/Takodana_02"
+    "Mode1;S8/Felucia/Levels/MP/Felucia_01/Felucia_01"
+    "Mode1;S9_3/Hoth_02/Hoth_02"
+)
+
+galactic_maps=(
+  "IOIGANoFun;Levels/MP/Kashyyyk_01/Kashyyyk_01"
+  "IOIGANoFun;S1/Levels/Crait_01/Crait_01"
+  "IOIGANoFun;Levels/MP/Takodana_01/Takodana_01"
+  "IOIGANoFun;Levels/MP/Yavin_01/Yavin_01"
+  "IOIGANoFun;S5_1/Levels/MP/Geonosis_01/Geonosis_01"
+  "IOIGANoFun;Levels/MP/DeathStar02_01/DeathStar02_01"
+  "IOIGANoFun;Levels/MP/StarKiller_01/StarKiller_01"
+  "IOIGANoFun;Levels/MP/Kamino_01/Kamino_01"
+  "IOIGANoFun;Levels/MP/Jakku_01/Jakku_01"
+  "IOIGANoFun;Levels/MP/Endor_01/Endor_01"
+  "IOIGANoFun;Levels/MP/Tatooine_01/Tatooine_01"
+  "IOIGANoFun;Levels/MP/Hoth_01/Hoth_01"
+  "IOIGANoFun;Levels/MP/Naboo_01/Naboo_01"
+)
+
 
 # User must define these
 if [ -z "$EA_EMAIL" ] || [ -z "$EA_PASSWORD" ] || [ -z "$KYBER_TOKEN" ] || [ -z "$KYBER_SERVER_NAME" ] || [ -z "$KYBER_INSTALL_PATH" ]; then
@@ -22,21 +75,18 @@ if [ -n "$KYBER_SERVER_PLUGINS_PATH" ] && [ -z "$KYBER_SERVER_PLUGINS_SOURCE" ];
 fi
 
 
-maps=(
-    "Mode1;S9/Paintball/Levels/MP/Paintball_01/Paintball_01"
-    "Mode1;Levels/MP/DeathStar02_01/DeathStar02_01"
-    "Mode1;S7_2/Levels/Naboo_03/Naboo_03"
-    "Mode1;S6_2/Geonosis_02/Levels/Geonosis_02/Geonosis_02"
-    "Mode1;S7_1/Levels/Kamino_03/Kamino_03"
-    "Mode1;S7/Levels/Kashyyyk_02/Kashyyyk_02"
-    "Mode1;S9_3/Tatooine_02/Tatooine_02"
-    "Mode1;Levels/MP/Yavin_01/Yavin_01"
-    "Mode1;S9_3/Scarif/Levels/MP/Scarif_02/Scarif_02"
-    "Mode1;S9/Jakku_02/Jakku_02"
-    "Mode1;S9/Takodana_02/Takodana_02"
-    "Mode1;S8/Felucia/Levels/MP/Felucia_01/Felucia_01"
-    "Mode1;S9_3/Hoth_02/Hoth_02"
-)
+case "$mode" in
+  conquest)
+    maps=("${conquest_maps[@]}")
+    ;;
+  galactic)
+    maps=("${galactic_maps[@]}")
+    ;;
+  *)
+    echo "Unknown mode: $mode. Supported modes: conquest, galactic"
+    exit 1
+    ;;
+esac
 
 # Shuffle the maps then base 64 encode the map rotation string
 map_rotation=$(printf "%s\n" "${maps[@]}" | shuf | base64 -w 0)
