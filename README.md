@@ -17,7 +17,7 @@ This is a list of supported flags for the `start_battlefront.sh` script.
 
 - `--server-name`: This allows you to override the server name specified in the `.env` file. This is useful if you want to have multiple servers running with different names.
 - `--mode` (default: `conquest`): This allows you to specify the game mode to run.
-    - Supported modes:
+    - Supported modes (Can be comma separated to combine the modes):
         - `conquest` (Conquest)
         - `galactic` (Galactic Assault)
 
