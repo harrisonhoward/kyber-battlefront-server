@@ -12,7 +12,7 @@ usage() {
 }
 
 # Flags processing
-mode="conquest"
+KYBER_SERVER_MODES="${KYBER_SERVER_MODES:-conquest}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
         usage
         exit 1
       fi
-      mode="$2"
+      KYBER_SERVER_MODES="$2"
       shift 2
       ;;
     --server-name)
@@ -95,18 +95,22 @@ if [ -n "$KYBER_SERVER_PLUGINS_PATH" ] && [ -z "$KYBER_SERVER_PLUGINS_SOURCE" ];
 fi
 
 
-case "$mode" in
-  conquest)
-    maps=("${conquest_maps[@]}")
-    ;;
-  galactic)
-    maps=("${galactic_maps[@]}")
-    ;;
-  *)
-    echo "Unknown mode: $mode. Supported modes: conquest, galactic"
-    exit 1
-    ;;
-esac
+IFS=',' read -ra modes <<< "$KYBER_SERVER_MODES"
+maps=()
+for m in "${modes[@]}"; do
+  case "$m" in
+    conquest)
+      maps+=("${conquest_maps[@]}")
+      ;;
+    galactic)
+      maps+=("${galactic_maps[@]}")
+      ;;
+    *)
+      echo "Unknown mode: $m. Supported modes: conquest, galactic"
+      exit 1
+      ;;
+  esac
+done
 
 # Shuffle the maps then base 64 encode the map rotation string
 map_rotation=$(printf "%s\n" "${maps[@]}" | shuf | base64 -w 0)
