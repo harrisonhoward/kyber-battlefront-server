@@ -116,6 +116,9 @@ done
 map_rotation=$(printf "%s\n" "${maps[@]}" | shuf | base64 -w 0)
 
 docker_args=(
+  --name kyber-battlefront
+  --restart unless-stopped
+  -d
   -e "MAXIMA_CREDENTIALS=$EA_EMAIL:$EA_PASSWORD"
   -e "KYBER_TOKEN=$KYBER_TOKEN"
   -e "KYBER_SERVER_NAME=$KYBER_SERVER_NAME"
@@ -156,6 +159,23 @@ fi
 # Run the plugins bundler
 ./plugin_bundler.sh
 
-sudo docker run \
+# Stop and remove any existing container so the new run (with reshuffled maps) takes over
+docker stop kyber-battlefront 2>/dev/null && docker rm kyber-battlefront 2>/dev/null || true
+
+docker run \
   "${docker_args[@]}" \
-  -it ghcr.io/armchairdevelopers/kyber-server:latest
+  ghcr.io/armchairdevelopers/kyber-server:latest
+
+# Install or remove a cron job for scheduled daily restarts.
+# Set KYBER_RESTART_SCHEDULE in .env to a cron expression (e.g. "0 4 * * *") to enable.
+# Leave it unset or empty to remove any existing schedule.
+SCRIPT_DIR=$(cd "$(dirname "$(realpath "$0")")" && pwd)
+SCRIPT_PATH="$SCRIPT_DIR/$(basename "$0")"
+CRON_MARKER="# kyber-battlefront restart"
+if [ -n "$KYBER_RESTART_SCHEDULE" ]; then
+  CRON_CMD="$KYBER_RESTART_SCHEDULE /bin/bash -c 'cd \"$SCRIPT_DIR\" && \"$SCRIPT_PATH\"' $CRON_MARKER"
+  (crontab -l 2>/dev/null | grep -v "$CRON_MARKER"; echo "$CRON_CMD") | crontab -
+  echo "Cron restart scheduled: $KYBER_RESTART_SCHEDULE"
+else
+  (crontab -l 2>/dev/null | grep -v "$CRON_MARKER") | crontab - 2>/dev/null || true
+fi
