@@ -125,7 +125,7 @@ map_rotation=$(printf "%s\n" "${maps[@]}" | shuf | base64 -w 0)
 docker_args=(
   --name kyber-battlefront
   --restart unless-stopped
-  -d
+  -dt
   -e "MAXIMA_CREDENTIALS=$EA_EMAIL:$EA_PASSWORD"
   -e "KYBER_TOKEN=$KYBER_TOKEN"
   -e "KYBER_SERVER_NAME=$KYBER_SERVER_NAME"
