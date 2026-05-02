@@ -20,6 +20,7 @@ This is a list of supported flags for the `start_battlefront.sh` script.
     - Supported modes (Can be comma separated to combine the modes):
         - `conquest` (Conquest)
         - `galactic` (Galactic Assault)
+- `--unschedule`: Removes the cron-based restart schedule and exits immediately without touching the running container. Use this when you want to stop the server from automatically restarting without restarting it first.
 
 ## Installation
 
