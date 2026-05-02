@@ -4,11 +4,12 @@ source ./.env
 
 # Print usage information
 usage() {
-  echo "Usage: $0 [--mode MODE] [--server-name NAME]"
+  echo "Usage: $0 [--mode MODE] [--server-name NAME] [--unschedule]"
   echo
   echo "Options:"
   echo "  --mode MODE           Game mode to use (default: conquest)"
   echo "  --server-name NAME    Server name to use"
+  echo "  --unschedule          Remove the cron restart schedule and exit"
 }
 
 # Flags processing
@@ -16,6 +17,12 @@ KYBER_SERVER_MODES="${KYBER_SERVER_MODES:-conquest}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --unschedule)
+      CRON_MARKER="# kyber-battlefront restart"
+      (crontab -l 2>/dev/null | grep -v "$CRON_MARKER") | crontab - 2>/dev/null || true
+      echo "Cron restart schedule removed."
+      exit 0
+      ;;
     --mode)
       if [ $# -lt 2 ] || [ -z "$2" ]; then
         echo "Error: --mode requires a non-empty argument."
@@ -184,3 +191,5 @@ if [ -n "$KYBER_RESTART_SCHEDULE" ]; then
 else
   (crontab -l 2>/dev/null | grep -v "$CRON_MARKER") | crontab - 2>/dev/null || true
 fi
+
+docker logs -f kyber-battlefront
