@@ -51,35 +51,35 @@ done
 
 
 conquest_maps=(
-    "Mode1;S9/Paintball/Levels/MP/Paintball_01/Paintball_01"
-    "Mode1;Levels/MP/DeathStar02_01/DeathStar02_01"
-    "Mode1;S7_2/Levels/Naboo_03/Naboo_03"
     "Mode1;S6_2/Geonosis_02/Levels/Geonosis_02/Geonosis_02"
     "Mode1;S7_1/Levels/Kamino_03/Kamino_03"
+    "Mode1;S7_2/Levels/Naboo_03/Naboo_03"
     "Mode1;S7/Levels/Kashyyyk_02/Kashyyyk_02"
+    "Mode1;S8/Felucia/Levels/MP/Felucia_01/Felucia_01"
+    "Mode1;S9_3/Scarif/Levels/MP/Scarif_02/Scarif_02"
     "Mode1;S9_3/Tatooine_02/Tatooine_02"
     "Mode1;Levels/MP/Yavin_01/Yavin_01"
-    "Mode1;S9_3/Scarif/Levels/MP/Scarif_02/Scarif_02"
+    "Mode1;S9_3/Hoth_02/Hoth_02"
+    "Mode1;Levels/MP/DeathStar02_01/DeathStar02_01"
     "Mode1;S9/Jakku_02/Jakku_02"
     "Mode1;S9/Takodana_02/Takodana_02"
-    "Mode1;S8/Felucia/Levels/MP/Felucia_01/Felucia_01"
-    "Mode1;S9_3/Hoth_02/Hoth_02"
+    "Mode1;S9/Paintball/Levels/MP/Paintball_01/Paintball_01"
 )
 
 galactic_maps=(
-    "PlanetaryBattles;S1/Levels/Crait_01/Crait_01"
-    "PlanetaryBattles;Levels/MP/Jakku_01/Jakku_01"
-    "PlanetaryBattles;Levels/MP/Takodana_01/Takodana_01"
-    "PlanetaryBattles;Levels/MP/DeathStar02_01/DeathStar02_01"
     "PlanetaryBattles;S5_1/Levels/MP/Geonosis_01/Geonosis_01"
-    "PlanetaryBattles;Levels/MP/Yavin_01/Yavin_01"
-    "PlanetaryBattles;Levels/MP/StarKiller_01/StarKiller_01"
-    "PlanetaryBattles;Levels/MP/Kashyyyk_01/Kashyyyk_01"
-    "PlanetaryBattles;Levels/MP/Tatooine_01/Tatooine_01"
-    "PlanetaryBattles;Levels/MP/Hoth_01/Hoth_01"
-    "PlanetaryBattles;Levels/MP/Endor_01/Endor_01"
     "PlanetaryBattles;Levels/MP/Kamino_01/Kamino_01"
     "PlanetaryBattles;Levels/MP/Naboo_01/Naboo_01"
+    "PlanetaryBattles;Levels/MP/Kashyyyk_01/Kashyyyk_01"
+    "PlanetaryBattles;Levels/MP/Tatooine_01/Tatooine_01"
+    "PlanetaryBattles;Levels/MP/Yavin_01/Yavin_01"
+    "PlanetaryBattles;Levels/MP/Hoth_01/Hoth_01"
+    "PlanetaryBattles;Levels/MP/Endor_01/Endor_01"
+    "PlanetaryBattles;Levels/MP/DeathStar02_01/DeathStar02_01"
+    "PlanetaryBattles;Levels/MP/Jakku_01/Jakku_01"
+    "PlanetaryBattles;Levels/MP/Takodana_01/Takodana_01"
+    "PlanetaryBattles;Levels/MP/StarKiller_01/StarKiller_01"
+    "PlanetaryBattles;S1/Levels/Crait_01/Crait_01"
 )
 
 
