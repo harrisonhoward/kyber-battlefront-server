@@ -20,6 +20,15 @@ This is a list of supported flags for the `start_battlefront.sh` script.
     - Supported modes (Can be comma separated to combine the modes):
         - `conquest` (Conquest)
         - `galactic` (Galactic Assault)
+- `--eras` (default: `all`): This allows you to specify which Star Wars eras to include in map rotation.
+    - Supported eras (Can be comma separated to combine eras):
+        - `prequel`
+        - `original`
+        - `sequel`
+        - `all` (expands to `prequel,original,sequel`)
+    - Example combinations:
+        - `--mode conquest --eras prequel`
+        - `--mode conquest,galactic --eras prequel,original`
 - `--unschedule`: Removes the cron-based restart schedule and exits immediately without touching the running container. Use this when you want to stop the server from automatically restarting without restarting it first.
 
 ## Installation
