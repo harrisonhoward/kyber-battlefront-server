@@ -4,16 +4,18 @@ source ./.env
 
 # Print usage information
 usage() {
-  echo "Usage: $0 [--mode MODE] [--server-name NAME] [--unschedule]"
+  echo "Usage: $0 [--mode MODE] [--eras ERAS] [--server-name NAME] [--unschedule]"
   echo
   echo "Options:"
   echo "  --mode MODE           Game mode to use (default: conquest)"
+  echo "  --eras ERAS           Eras to include: prequel,original,sequel,all (default: all)"
   echo "  --server-name NAME    Server name to use"
   echo "  --unschedule          Remove the cron restart schedule and exit"
 }
 
 # Flags processing
 KYBER_SERVER_MODES="${KYBER_SERVER_MODES:-conquest}"
+KYBER_SERVER_ERAS="${KYBER_SERVER_ERAS:-all}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -30,6 +32,15 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       KYBER_SERVER_MODES="$2"
+      shift 2
+      ;;
+    --eras)
+      if [ $# -lt 2 ] || [ -z "$2" ]; then
+        echo "Error: --eras requires a non-empty argument."
+        usage
+        exit 1
+      fi
+      KYBER_SERVER_ERAS="$2"
       shift 2
       ;;
     --server-name)
@@ -50,32 +61,44 @@ while [[ $# -gt 0 ]]; do
 done
 
 
-conquest_maps=(
+conquest_prequel_maps=(
     "Mode1;S6_2/Geonosis_02/Levels/Geonosis_02/Geonosis_02"
     "Mode1;S7_1/Levels/Kamino_03/Kamino_03"
     "Mode1;S7_2/Levels/Naboo_03/Naboo_03"
     "Mode1;S7/Levels/Kashyyyk_02/Kashyyyk_02"
     "Mode1;S8/Felucia/Levels/MP/Felucia_01/Felucia_01"
+)
+
+conquest_original_maps=(
     "Mode1;S9_3/Scarif/Levels/MP/Scarif_02/Scarif_02"
     "Mode1;S9_3/Tatooine_02/Tatooine_02"
     "Mode1;Levels/MP/Yavin_01/Yavin_01"
     "Mode1;S9_3/Hoth_02/Hoth_02"
     "Mode1;Levels/MP/DeathStar02_01/DeathStar02_01"
+)
+
+conquest_sequel_maps=(
     "Mode1;S9/Jakku_02/Jakku_02"
     "Mode1;S9/Takodana_02/Takodana_02"
     "Mode1;S9/Paintball/Levels/MP/Paintball_01/Paintball_01"
 )
 
-galactic_maps=(
+galactic_prequel_maps=(
     "PlanetaryBattles;S5_1/Levels/MP/Geonosis_01/Geonosis_01"
     "PlanetaryBattles;Levels/MP/Kamino_01/Kamino_01"
     "PlanetaryBattles;Levels/MP/Naboo_01/Naboo_01"
     "PlanetaryBattles;Levels/MP/Kashyyyk_01/Kashyyyk_01"
+)
+
+galactic_original_maps=(
     "PlanetaryBattles;Levels/MP/Tatooine_01/Tatooine_01"
     "PlanetaryBattles;Levels/MP/Yavin_01/Yavin_01"
     "PlanetaryBattles;Levels/MP/Hoth_01/Hoth_01"
     "PlanetaryBattles;Levels/MP/Endor_01/Endor_01"
     "PlanetaryBattles;Levels/MP/DeathStar02_01/DeathStar02_01"
+)
+
+galactic_sequel_maps=(
     "PlanetaryBattles;Levels/MP/Jakku_01/Jakku_01"
     "PlanetaryBattles;Levels/MP/Takodana_01/Takodana_01"
     "PlanetaryBattles;Levels/MP/StarKiller_01/StarKiller_01"
@@ -102,22 +125,114 @@ if [ -n "$KYBER_SERVER_PLUGINS_PATH" ] && [ -z "$KYBER_SERVER_PLUGINS_SOURCE" ];
 fi
 
 
-IFS=',' read -ra modes <<< "$KYBER_SERVER_MODES"
-maps=()
-for m in "${modes[@]}"; do
-  case "$m" in
-    conquest)
-      maps+=("${conquest_maps[@]}")
+trim_token() {
+  local token="$1"
+  token="${token#"${token%%[![:space:]]*}"}"
+  token="${token%"${token##*[![:space:]]}"}"
+  printf "%s" "$token"
+}
+
+append_maps_for_mode_and_era() {
+  local mode="$1"
+  local era="$2"
+
+  case "$mode:$era" in
+    conquest:prequel)
+      maps+=("${conquest_prequel_maps[@]}")
       ;;
-    galactic)
-      maps+=("${galactic_maps[@]}")
+    conquest:original)
+      maps+=("${conquest_original_maps[@]}")
+      ;;
+    conquest:sequel)
+      maps+=("${conquest_sequel_maps[@]}")
+      ;;
+    galactic:prequel)
+      maps+=("${galactic_prequel_maps[@]}")
+      ;;
+    galactic:original)
+      maps+=("${galactic_original_maps[@]}")
+      ;;
+    galactic:sequel)
+      maps+=("${galactic_sequel_maps[@]}")
+      ;;
+  esac
+}
+
+IFS=',' read -ra raw_modes <<< "$KYBER_SERVER_MODES"
+IFS=',' read -ra raw_eras <<< "$KYBER_SERVER_ERAS"
+
+modes=()
+for raw_mode in "${raw_modes[@]}"; do
+  mode=$(trim_token "$raw_mode")
+  if [ -z "$mode" ]; then
+    continue
+  fi
+
+  case "$mode" in
+    conquest|galactic)
+      modes+=("$mode")
       ;;
     *)
-      echo "Unknown mode: $m. Supported modes: conquest, galactic"
+      echo "Unknown mode: $mode. Supported modes: conquest, galactic"
       exit 1
       ;;
   esac
 done
+
+if [ ${#modes[@]} -eq 0 ]; then
+  echo "Error: no valid modes provided."
+  exit 1
+fi
+
+eras=()
+expand_all_eras=false
+for raw_era in "${raw_eras[@]}"; do
+  era=$(trim_token "$raw_era")
+  if [ -z "$era" ]; then
+    continue
+  fi
+
+  case "$era" in
+    prequel|original|sequel)
+      eras+=("$era")
+      ;;
+    all)
+      expand_all_eras=true
+      ;;
+    *)
+      echo "Unknown era: $era. Supported eras: prequel, original, sequel, all"
+      exit 1
+      ;;
+  esac
+done
+
+if [ "$expand_all_eras" = true ]; then
+  eras=(prequel original sequel)
+fi
+
+if [ ${#eras[@]} -eq 0 ]; then
+  echo "Error: no valid eras provided."
+  exit 1
+fi
+
+maps=()
+for m in "${modes[@]}"; do
+  for e in "${eras[@]}"; do
+    append_maps_for_mode_and_era "$m" "$e"
+  done
+done
+
+# Avoid duplicate entries when overlapping selections are provided.
+deduped_maps=()
+while IFS= read -r map_line; do
+  deduped_maps+=("$map_line")
+done < <(printf "%s\n" "${maps[@]}" | awk '!seen[$0]++')
+maps=("${deduped_maps[@]}")
+
+if [ ${#maps[@]} -eq 0 ]; then
+  echo "Error: no maps found for selected modes and eras."
+  exit 1
+fi
 
 # Shuffle the maps then base 64 encode the map rotation string
 map_rotation=$(printf "%s\n" "${maps[@]}" | shuf | base64 -w 0)
