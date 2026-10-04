@@ -9,7 +9,7 @@ This repository is to assist others in setting up their own server.
 - **Region**: Sydney (OCE)
 - **OS**: Debian GNU/Linux 13 (trixie)
 - **CPU**: Intel Core i7-7700K @ 4.20GHz
-- **Memory**: 16 GB DDR4 @ 2400 MHz
+- **Memory**: 64 GB DDR4 (2x 16 GB @ 2666 MHz, 2x 16 GB @ 3600 MHz)
 
 ## Start Server Flags
 
