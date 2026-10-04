@@ -20,7 +20,6 @@ local whitelistedGameModes = {
 ---@field activeGameMode GameMode|nil
 ---@field AddGameMode fun(self: ServerService, instance: InformationAsset)
 ---@field IsGameModeWhitelisted fun(self: ServerService, gameModeId: string): boolean
----@field GetTeamCounts fun(self: ServerService): { team1: number, team2: number }
 ServerService = {
     serverInitialised = false,
     gameModes = {},

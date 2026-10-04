@@ -4,9 +4,9 @@ local PlayerService = require "PlayerService"
 
 ---@class TeamService
 ---@field GetAutoPlayerSettings fun(self: TeamService, silent?: boolean): table|nil -- Console.GetSettings with extra handling
----@field GetTeamCounts fun(self: TeamService): { team1: number, team2: number }
+---@field GetTeamCounts fun(self: TeamService, excludePlayer?: Player): { team1: number, team2: number } -- Excludes bots and the optional player
 ---@field GetPlayerCount fun(self: TeamService): number -- Player count without bots
----@field BalanceBots fun(self: TeamService) -- Will ensure both teams have the same amount of players
+---@field BalanceBots fun(self: TeamService, excludePlayer?: Player) -- Will ensure both teams have the same amount of players
 ---@field ResetBots fun(self: TeamService) -- Resets the bot counts and active gamemode back to 0
 ---@field RandomiseTeams fun(self: TeamService)
 TeamService = {
@@ -19,16 +19,15 @@ TeamService = {
         local settings = Console.GetSettings("AutoPlayers")
         if settings == nil then
             if silent ~= true then
-                return
+                print("AutoPlayer settings not found!")
             end
-            print("AutoPlayer settings not found!")
             return nil
         end
 
         return settings
     end,
 
-    GetTeamCounts = function(self)
+    GetTeamCounts = function(self, excludePlayer)
         local teamCounts = {
             team1 = 0,
             team2 = 0,
@@ -36,7 +35,7 @@ TeamService = {
 
         local players = PlayerManager.GetPlayers()
         for _, player in ipairs(players) do
-            if player.isBot then
+            if player.isBot or (excludePlayer ~= nil and player.playerId == excludePlayer.playerId) then
                 goto continue
             end
 
@@ -58,13 +57,13 @@ TeamService = {
         return teamCounts.team1 + teamCounts.team2
     end,
 
-    BalanceBots = function(self)
+    BalanceBots = function(self, excludePlayer)
         local settings = self:GetAutoPlayerSettings()
         if settings == nil then
             return
         end
 
-        local teamCounts = TeamService:GetTeamCounts()
+        local teamCounts = TeamService:GetTeamCounts(excludePlayer)
         local desiredPlayersPerTeam = math.floor(
             math.floor(ServerService.activeGameMode.maxPlayers * Config.botDensity) / 2
         )

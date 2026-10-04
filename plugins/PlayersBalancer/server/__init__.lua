@@ -31,16 +31,6 @@ local function init()
     TeamService:BalanceBots()
 end
 
--- No event for player leaving on STABLE. This is a workaround to balance every 5 seconds instead.
-local elapsedTime = 0
-EventManager.Listen("Server:UpdatePre", function(delta)
-    elapsedTime = elapsedTime + delta
-    if elapsedTime >= 5 then
-        elapsedTime = elapsedTime - 5
-        TeamService:BalanceBots()
-    end
-end)
-
 EventManager.Listen("Server:Init", function()
     ServerService.serverInitialised = true
 end)
@@ -75,12 +65,33 @@ EventManager.Listen("Level:Loaded", function(_levelName, gameModeId)
     end
 end)
 
-EventManager.Listen("Server:PlayerJoined", function(player)
+-- Cleanup from the previous level before the next one loads
+EventManager.Listen("Level:Complete", function()
+    TeamService:ResetBots()
+end)
+
+EventManager.Listen("ServerPlayer:Joined", function(player)
     if player == nil then
-        print("PlayerJoined event triggered with nil player, skipping.")
+        print("ServerPlayer:Joined event triggered with nil player, skipping.")
         return
     end
 
-    PlayerService:BalancePlayer(player, TeamService:GetTeamCounts())
+    -- Balancer is not active for this game mode
+    if ServerService.activeGameMode == nil then
+        return
+    end
+
+    -- Exclude the joining player as they may already be assigned a default team
+    PlayerService:BalancePlayer(player, TeamService:GetTeamCounts(player))
     TeamService:BalanceBots()
+end)
+
+EventManager.Listen("ServerPlayer:Disconnect", function(player)
+    if player == nil then
+        print("ServerPlayer:Disconnect event triggered with nil player, skipping.")
+        return
+    end
+
+    -- Exclude the leaving player as they may still be in the player list
+    TeamService:BalanceBots(player)
 end)
