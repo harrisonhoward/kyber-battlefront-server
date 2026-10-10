@@ -1,6 +1,16 @@
 #!/bin/bash
 
-source ./.env
+# Run from the script's directory so relative paths work from anywhere (e.g. cron)
+SCRIPT_DIR=$(cd "$(dirname "$(realpath "$0")")" && pwd)
+SCRIPT_PATH="$SCRIPT_DIR/$(basename "$0")"
+CRON_MARKER="# kyber-battlefront restart"
+cd "$SCRIPT_DIR" || exit 1
+
+if [ -f .env ]; then
+  source .env
+else
+  echo "Warning: no .env file found in $SCRIPT_DIR."
+fi
 
 # Print usage information
 usage() {
@@ -20,7 +30,6 @@ KYBER_SERVER_ERAS="${KYBER_SERVER_ERAS:-all}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --unschedule)
-      CRON_MARKER="# kyber-battlefront restart"
       (crontab -l 2>/dev/null | grep -v "$CRON_MARKER") | crontab - 2>/dev/null || true
       echo "Cron restart schedule removed."
       exit 0
@@ -234,68 +243,69 @@ if [ ${#maps[@]} -eq 0 ]; then
   exit 1
 fi
 
-# Shuffle the maps then base 64 encode the map rotation string
-map_rotation=$(printf "%s\n" "${maps[@]}" | shuf | base64 -w 0)
+# Kyber loads the first entry before plugins run, so shuffling here is what
+# randomises the starting map. MapShuffler handles the rest of the rotation.
+KYBER_MAP_ROTATION=$(printf "%s\n" "${maps[@]}" | shuf | base64 -w 0)
+MAXIMA_CREDENTIALS="$EA_EMAIL:$EA_PASSWORD"
 
 docker_args=(
   --name kyber-battlefront
   --restart unless-stopped
   -dt
-  -e "MAXIMA_CREDENTIALS=$EA_EMAIL:$EA_PASSWORD"
-  -e "KYBER_TOKEN=$KYBER_TOKEN"
-  -e "KYBER_SERVER_NAME=$KYBER_SERVER_NAME"
-  -e "KYBER_MAP_ROTATION=$map_rotation"
 )
 
-# Optional server settings
-[ -n "$KYBER_SERVER_DESCRIPTION" ]  && docker_args+=(-e "KYBER_SERVER_DESCRIPTION=$KYBER_SERVER_DESCRIPTION")
-[ -n "$KYBER_SERVER_PASSWORD" ]     && docker_args+=(-e "KYBER_SERVER_PASSWORD=$KYBER_SERVER_PASSWORD")
-[ -n "$KYBER_SERVER_MAX_PLAYERS" ]  && docker_args+=(-e "KYBER_SERVER_MAX_PLAYERS=$KYBER_SERVER_MAX_PLAYERS")
-[ -n "$KYBER_MODULE_CHANNEL" ]      && docker_args+=(-e "KYBER_MODULE_CHANNEL=$KYBER_MODULE_CHANNEL")
-[ -n "$KYBER_LOG_LEVEL" ]           && docker_args+=(-e "KYBER_LOG_LEVEL=$KYBER_LOG_LEVEL")
+# Variables are exported and passed by name only, so their values (including
+# credentials) don't appear in the process list.
+pass_env() {
+  export "$1"
+  docker_args+=(-e "$1")
+}
 
-# Optional plugin settings
-[ -n "$KYBER_PLUGIN_BOT_DENSITY" ]             && docker_args+=(-e "KYBER_PLUGIN_BOT_DENSITY=$KYBER_PLUGIN_BOT_DENSITY")
-[ -n "$KYBER_PLUGIN_USE_WHITELIST_GAMEMODES" ] && docker_args+=(-e "KYBER_PLUGIN_USE_WHITELIST_GAMEMODES=$KYBER_PLUGIN_USE_WHITELIST_GAMEMODES")
-[ -n "$KYBER_PLUGIN_ENABLE_SHUFFLER" ]         && docker_args+=(-e "KYBER_PLUGIN_ENABLE_SHUFFLER=$KYBER_PLUGIN_ENABLE_SHUFFLER")
-[ -n "$KYBER_PLUGIN_USE_BUILTIN_SHUFFLER" ]    && docker_args+=(-e "KYBER_PLUGIN_USE_BUILTIN_SHUFFLER=$KYBER_PLUGIN_USE_BUILTIN_SHUFFLER")
-[ -n "$KYBER_PLUGIN_ENABLE_AFK_KICK" ]         && docker_args+=(-e "KYBER_PLUGIN_ENABLE_AFK_KICK=$KYBER_PLUGIN_ENABLE_AFK_KICK")
+# Required settings
+for var in MAXIMA_CREDENTIALS KYBER_TOKEN KYBER_SERVER_NAME KYBER_MAP_ROTATION; do
+  pass_env "$var"
+done
+
+# Optional server settings and all plugin settings (KYBER_PLUGIN_*)
+for var in KYBER_SERVER_DESCRIPTION KYBER_SERVER_PASSWORD KYBER_SERVER_MAX_PLAYERS \
+  KYBER_MODULE_CHANNEL KYBER_LOG_LEVEL $(compgen -v KYBER_PLUGIN_); do
+  if [ -n "${!var}" ]; then
+    pass_env "$var"
+  fi
+done
 
 # Install path (required)
 docker_args+=(-v "$KYBER_INSTALL_PATH:/mnt/battlefront")
 
 # Mod folder (optional)
 if [ -n "$KYBER_MOD_FOLDER" ]; then
-  docker_args+=(
-    -e "KYBER_MOD_FOLDER=$KYBER_MOD_FOLDER"
-    -v "$KYBER_MOD_FOLDER_SOURCE:$KYBER_MOD_FOLDER"
-  )
+  pass_env KYBER_MOD_FOLDER
+  docker_args+=(-v "$KYBER_MOD_FOLDER_SOURCE:$KYBER_MOD_FOLDER")
 fi
 
 # Server plugins (optional)
 if [ -n "$KYBER_SERVER_PLUGINS_PATH" ]; then
-  docker_args+=(
-    -e "KYBER_SERVER_PLUGINS_PATH=$KYBER_SERVER_PLUGINS_PATH"
-    -v "$KYBER_SERVER_PLUGINS_SOURCE:$KYBER_SERVER_PLUGINS_PATH"
-  )
+  pass_env KYBER_SERVER_PLUGINS_PATH
+  docker_args+=(-v "$KYBER_SERVER_PLUGINS_SOURCE:$KYBER_SERVER_PLUGINS_PATH")
+
+  # Bundle the plugins, only needed when they are mounted
+  ./plugin_bundler.sh || { echo "Error: plugin bundling failed."; exit 1; }
 fi
 
-# Run the plugins bundler
-./plugin_bundler.sh
+# Pull the latest server image so restarts pick up Kyber updates
+KYBER_IMAGE="ghcr.io/armchairdevelopers/kyber-server:latest"
+docker pull -q "$KYBER_IMAGE" || echo "Warning: failed to pull $KYBER_IMAGE, using the cached image."
 
 # Stop and remove any existing container (running or stopped) so the name is free
 docker rm -f kyber-battlefront 2>/dev/null || true
 
 docker run \
   "${docker_args[@]}" \
-  ghcr.io/armchairdevelopers/kyber-server:latest || { echo "Error: docker run failed. Cron not updated."; exit 1; }
+  "$KYBER_IMAGE" || { echo "Error: docker run failed. Cron not updated."; exit 1; }
 
 # Install or remove a cron job for scheduled daily restarts.
 # Set KYBER_RESTART_SCHEDULE in .env to a cron expression (e.g. "0 4 * * *") to enable.
 # Leave it unset or empty to remove any existing schedule.
-SCRIPT_DIR=$(cd "$(dirname "$(realpath "$0")")" && pwd)
-SCRIPT_PATH="$SCRIPT_DIR/$(basename "$0")"
-CRON_MARKER="# kyber-battlefront restart"
 if [ -n "$KYBER_RESTART_SCHEDULE" ]; then
   # Validate: must be exactly 5 whitespace-separated fields, no newlines
   if [[ "$KYBER_RESTART_SCHEDULE" =~ $'\n' ]] || [[ ! "$KYBER_RESTART_SCHEDULE" =~ ^[^[:space:]]+[[:space:]]+[^[:space:]]+[[:space:]]+[^[:space:]]+[[:space:]]+[^[:space:]]+[[:space:]]+[^[:space:]]+$ ]]; then
@@ -309,4 +319,7 @@ else
   (crontab -l 2>/dev/null | grep -v "$CRON_MARKER") | crontab - 2>/dev/null || true
 fi
 
-docker logs -f kyber-battlefront
+# Only follow logs when run interactively, otherwise cron runs would never exit
+if [ -t 1 ]; then
+  docker logs -f kyber-battlefront
+fi
