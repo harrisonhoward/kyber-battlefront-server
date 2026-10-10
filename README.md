@@ -37,6 +37,7 @@ This is a list of supported flags for the `start_battlefront.sh` script.
 
 - `--instance`: Runs the instance configured in `<id>.instance.env`. See [Multiple Instances](#multiple-instances).
 - `--unschedule`: Removes the cron-based restart schedule and exits immediately without touching the running container. Use this when you want to stop the server from automatically restarting without restarting it first. Combine with `--instance` to only remove that instance's schedule.
+- `--teardown`: Removes the server and exits. With `--instance`, removes only that instance's container and restart schedule. Without it, removes every `kyber-battlefront` container, all of their restart schedules and the KYBER server images. Asks for confirmation when run from a terminal. Game files, mods and env files are not touched.
 
 ## Multiple Instances
 
