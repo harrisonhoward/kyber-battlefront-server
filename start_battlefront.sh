@@ -3,62 +3,45 @@
 # Run from the script's directory so relative paths work from anywhere (e.g. cron)
 SCRIPT_DIR=$(cd "$(dirname "$(realpath "$0")")" && pwd)
 SCRIPT_PATH="$SCRIPT_DIR/$(basename "$0")"
-CRON_MARKER="# kyber-battlefront restart"
 cd "$SCRIPT_DIR" || exit 1
-
-if [ -f .env ]; then
-  source .env
-else
-  echo "Warning: no .env file found in $SCRIPT_DIR."
-fi
 
 # Print usage information
 usage() {
-  echo "Usage: $0 [--mode MODE] [--eras ERAS] [--server-name NAME] [--unschedule]"
+  echo "Usage: $0 [--instance ID] [--mode MODE] [--eras ERAS] [--server-name NAME] [--unschedule]"
   echo
   echo "Options:"
+  echo "  --instance ID         Run the instance configured in ID.instance.env (default: no instance)"
   echo "  --mode MODE           Game mode to use (default: conquest)"
   echo "  --eras ERAS           Eras to include: prequel,original,sequel,all (default: all)"
   echo "  --server-name NAME    Server name to use"
   echo "  --unschedule          Remove the cron restart schedule and exit"
 }
 
-# Flags processing
-KYBER_SERVER_MODES="${KYBER_SERVER_MODES:-conquest}"
-KYBER_SERVER_ERAS="${KYBER_SERVER_ERAS:-all}"
+# Flags processing, applied after the env files are loaded so they take priority
+INSTANCE=""
+UNSCHEDULE=false
+FLAG_MODES=""
+FLAG_ERAS=""
+FLAG_SERVER_NAME=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --unschedule)
-      (crontab -l 2>/dev/null | grep -v "$CRON_MARKER") | crontab - 2>/dev/null || true
-      echo "Cron restart schedule removed."
-      exit 0
+      UNSCHEDULE=true
+      shift
       ;;
-    --mode)
+    --instance|--mode|--eras|--server-name)
       if [ $# -lt 2 ] || [ -z "$2" ]; then
-        echo "Error: --mode requires a non-empty argument."
+        echo "Error: $1 requires a non-empty argument."
         usage
         exit 1
       fi
-      KYBER_SERVER_MODES="$2"
-      shift 2
-      ;;
-    --eras)
-      if [ $# -lt 2 ] || [ -z "$2" ]; then
-        echo "Error: --eras requires a non-empty argument."
-        usage
-        exit 1
-      fi
-      KYBER_SERVER_ERAS="$2"
-      shift 2
-      ;;
-    --server-name)
-      if [ $# -lt 2 ] || [ -z "$2" ]; then
-        echo "Error: --server-name requires a non-empty argument."
-        usage
-        exit 1
-      fi
-      KYBER_SERVER_NAME="$2"
+      case "$1" in
+        --instance)    INSTANCE="$2" ;;
+        --mode)        FLAG_MODES="$2" ;;
+        --eras)        FLAG_ERAS="$2" ;;
+        --server-name) FLAG_SERVER_NAME="$2" ;;
+      esac
       shift 2
       ;;
     *)
@@ -68,6 +51,54 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Instance ids are used in the container name, cron entry and file name
+if [ -n "$INSTANCE" ] && [[ ! "$INSTANCE" =~ ^[A-Za-z0-9_-]+$ ]]; then
+  echo "Error: --instance may only contain letters, numbers, '-' and '_'."
+  exit 1
+fi
+
+# Each instance gets its own container and cron entry
+CONTAINER_NAME="kyber-battlefront${INSTANCE:+-$INSTANCE}"
+CRON_MARKER="# $CONTAINER_NAME restart"
+
+remove_cron_schedule() {
+  (crontab -l 2>/dev/null | grep -vF "$CRON_MARKER") | crontab - 2>/dev/null || true
+}
+
+if [ "$UNSCHEDULE" = true ]; then
+  remove_cron_schedule
+  echo "Cron restart schedule removed for $CONTAINER_NAME."
+  exit 0
+fi
+
+# Shared settings, then the instance's settings on top
+if [ -f .env ]; then
+  source .env
+else
+  echo "Warning: no .env file found in $SCRIPT_DIR."
+fi
+
+if [ -n "$INSTANCE" ]; then
+  INSTANCE_FILE="$INSTANCE.instance.env"
+  if [ ! -f "$INSTANCE_FILE" ]; then
+    echo "Error: $INSTANCE_FILE not found in $SCRIPT_DIR. See example.instance.env."
+    exit 1
+  fi
+  source "$INSTANCE_FILE"
+fi
+
+[ -n "$FLAG_MODES" ]       && KYBER_SERVER_MODES="$FLAG_MODES"
+[ -n "$FLAG_ERAS" ]        && KYBER_SERVER_ERAS="$FLAG_ERAS"
+[ -n "$FLAG_SERVER_NAME" ] && KYBER_SERVER_NAME="$FLAG_SERVER_NAME"
+
+KYBER_SERVER_MODES="${KYBER_SERVER_MODES:-conquest}"
+KYBER_SERVER_ERAS="${KYBER_SERVER_ERAS:-all}"
+
+# Scheduled restarts only re-run with --instance, so other flags would be lost
+if [ -n "$KYBER_RESTART_SCHEDULE" ] && [ -n "$FLAG_MODES$FLAG_ERAS$FLAG_SERVER_NAME" ]; then
+  echo "Warning: --mode, --eras and --server-name aren't kept by scheduled restarts. Set them in an instance file instead."
+fi
 
 
 conquest_prequel_maps=(
@@ -249,7 +280,7 @@ KYBER_MAP_ROTATION=$(printf "%s\n" "${maps[@]}" | shuf | base64 -w 0)
 MAXIMA_CREDENTIALS="$EA_EMAIL:$EA_PASSWORD"
 
 docker_args=(
-  --name kyber-battlefront
+  --name "$CONTAINER_NAME"
   --restart unless-stopped
   -dt
 )
@@ -297,14 +328,14 @@ KYBER_IMAGE="ghcr.io/armchairdevelopers/kyber-server:latest"
 docker pull -q "$KYBER_IMAGE" || echo "Warning: failed to pull $KYBER_IMAGE, using the cached image."
 
 # Stop and remove any existing container (running or stopped) so the name is free
-docker rm -f kyber-battlefront 2>/dev/null || true
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 
 docker run \
   "${docker_args[@]}" \
   "$KYBER_IMAGE" || { echo "Error: docker run failed. Cron not updated."; exit 1; }
 
 # Install or remove a cron job for scheduled daily restarts.
-# Set KYBER_RESTART_SCHEDULE in .env to a cron expression (e.g. "0 4 * * *") to enable.
+# Set KYBER_RESTART_SCHEDULE in .env (or the instance file) to a cron expression (e.g. "0 4 * * *") to enable.
 # Leave it unset or empty to remove any existing schedule.
 if [ -n "$KYBER_RESTART_SCHEDULE" ]; then
   # Validate: must be exactly 5 whitespace-separated fields, no newlines
@@ -312,14 +343,14 @@ if [ -n "$KYBER_RESTART_SCHEDULE" ]; then
     echo "Error: KYBER_RESTART_SCHEDULE must be a valid 5-field cron expression."
     exit 1
   fi
-  CRON_CMD="$KYBER_RESTART_SCHEDULE /bin/bash -c 'cd \"$SCRIPT_DIR\" && \"$SCRIPT_PATH\"' $CRON_MARKER"
-  (crontab -l 2>/dev/null | grep -v "$CRON_MARKER"; echo "$CRON_CMD") | crontab -
-  echo "Cron restart scheduled: $KYBER_RESTART_SCHEDULE"
+  CRON_CMD="$KYBER_RESTART_SCHEDULE /bin/bash -c 'cd \"$SCRIPT_DIR\" && \"$SCRIPT_PATH\"${INSTANCE:+ --instance $INSTANCE}' $CRON_MARKER"
+  (crontab -l 2>/dev/null | grep -vF "$CRON_MARKER"; echo "$CRON_CMD") | crontab -
+  echo "Cron restart scheduled for $CONTAINER_NAME: $KYBER_RESTART_SCHEDULE"
 else
-  (crontab -l 2>/dev/null | grep -v "$CRON_MARKER") | crontab - 2>/dev/null || true
+  remove_cron_schedule
 fi
 
 # Only follow logs when run interactively, otherwise cron runs would never exit
 if [ -t 1 ]; then
-  docker logs -f kyber-battlefront
+  docker logs -f "$CONTAINER_NAME"
 fi
