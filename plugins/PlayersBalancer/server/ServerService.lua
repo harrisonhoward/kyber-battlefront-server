@@ -5,7 +5,12 @@ local whitelistedGameModes = {
     "Mode1",
     "PlanetaryBattles",
     "IOISupremacyUnrestricted",
-    "IOIGANoFun"
+    "IOIGANoFun",
+    "ModeC",
+    "PlanetaryMissions",
+    "Mode5",
+    "Blast",
+    "HeroesVersusVillains",
 }
 
 ---@alias GameMode
