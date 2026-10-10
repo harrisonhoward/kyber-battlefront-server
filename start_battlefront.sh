@@ -184,6 +184,7 @@ IFS=',' read -ra raw_modes <<< "$KYBER_SERVER_MODES"
 IFS=',' read -ra raw_eras <<< "$KYBER_SERVER_ERAS"
 
 modes=()
+expand_all_modes=false
 for raw_mode in "${raw_modes[@]}"; do
   mode=$(trim_token "$raw_mode")
   if [ -z "$mode" ]; then
@@ -194,12 +195,19 @@ for raw_mode in "${raw_modes[@]}"; do
     conquest|galactic)
       modes+=("$mode")
       ;;
+    all)
+      expand_all_modes=true
+      ;;
     *)
-      echo "Unknown mode: $mode. Supported modes: conquest, galactic"
+      echo "Unknown mode: $mode. Supported modes: conquest, galactic, all"
       exit 1
       ;;
   esac
 done
+
+if [ "$expand_all_modes" = true ]; then
+  modes=(conquest galactic)
+fi
 
 if [ ${#modes[@]} -eq 0 ]; then
   echo "Error: no valid modes provided."

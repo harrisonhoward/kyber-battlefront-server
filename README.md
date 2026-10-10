@@ -20,6 +20,7 @@ Server settings are set in `.env` (see [`.env.example`](.env.example)), or in an
     - Supported modes (Can be comma separated to combine the modes):
         - `conquest` (Conquest)
         - `galactic` (Galactic Assault)
+        - `all` (expands to `conquest,galactic`)
 - `KYBER_SERVER_ERAS` (default: `all`): Which Star Wars eras to include in map rotation.
     - Supported eras (Can be comma separated to combine eras):
         - `prequel`
