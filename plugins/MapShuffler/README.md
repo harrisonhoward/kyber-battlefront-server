@@ -7,7 +7,7 @@ Uses the [MapRotation](https://github.com/ArmchairDevelopers/KyberDocs/blob/main
 
 ## Supported Channel
 
-`stable`, from KYBER v2.0.0-beta10 which adds the `MapRotation` library. On older versions the plugin logs a warning on startup and does nothing.
+`stable`
 
 ## Configuration
 
