@@ -24,9 +24,8 @@ local function init()
     local wsSettings = Console.GetSettings("Whiteshark")
     if wsSettings ~= nil then
         wsSettings.autoBalanceTeamsOnNeutral = false
-        if Config.enableAfkKick then
-            wsSettings.noInteractivityTimeoutTime = 60 * 5
-        end
+        -- Kick after 5 minutes of no interactivity, 0 disables it
+        wsSettings.noInteractivityTimeoutTime = Config.enableAfkKick and 60 * 5 or 0
     end
     print("Disabled traditional team balancing in favour for PlayersBalancer's")
 
