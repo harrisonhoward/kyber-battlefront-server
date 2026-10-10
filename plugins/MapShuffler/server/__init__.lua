@@ -74,6 +74,13 @@ local function getCurrentEntry()
     return entries[MapRotation.GetCurrentEntryIndex() - 1]
 end
 
+-- MapRotation was added in KYBER v2.0.0-beta10, so do nothing until the
+-- module provides it rather than erroring on every level change.
+if MapRotation == nil then
+    print("MapRotation is not available in this KYBER version (requires v2.0.0-beta10 or newer). MapShuffler is disabled.")
+    return
+end
+
 -- Shuffle once the first level has loaded, as the rotation is populated by then
 EventManager.Listen("Level:Loaded", function()
     if hasShuffledOnStart then
