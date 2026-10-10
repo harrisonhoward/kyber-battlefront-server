@@ -5,13 +5,18 @@ SCRIPT_DIR=$(cd "$(dirname "$(realpath "$0")")" && pwd)
 SCRIPT_PATH="$SCRIPT_DIR/$(basename "$0")"
 cd "$SCRIPT_DIR" || exit 1
 
+KYBER_IMAGE_REPO="ghcr.io/armchairdevelopers/kyber-server"
+KYBER_IMAGE="$KYBER_IMAGE_REPO:latest"
+
 # Print usage information
 usage() {
-  echo "Usage: $0 [--instance ID] [--unschedule]"
+  echo "Usage: $0 [--instance ID] [--unschedule] [--teardown]"
   echo
   echo "Options:"
   echo "  --instance ID         Run the instance configured in ID.instance.env (default: .env only)"
   echo "  --unschedule          Remove the cron restart schedule and exit"
+  echo "  --teardown            Remove the container and its restart schedule and exit. Without"
+  echo "                        --instance, removes every instance and the KYBER server images"
   echo
   echo "Server settings (name, modes, eras, ...) are set in .env or the instance file."
 }
@@ -19,11 +24,16 @@ usage() {
 # Flags processing
 INSTANCE=""
 UNSCHEDULE=false
+TEARDOWN=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --unschedule)
       UNSCHEDULE=true
+      shift
+      ;;
+    --teardown)
+      TEARDOWN=true
       shift
       ;;
     --instance)
@@ -53,9 +63,52 @@ fi
 CONTAINER_NAME="kyber-battlefront${INSTANCE:+-$INSTANCE}"
 CRON_MARKER="# $CONTAINER_NAME restart"
 
+# Removes cron entries containing the given marker (defaults to this instance's)
 remove_cron_schedule() {
-  (crontab -l 2>/dev/null | grep -vF "$CRON_MARKER") | crontab - 2>/dev/null || true
+  (crontab -l 2>/dev/null | grep -vF "${1:-$CRON_MARKER}") | crontab - 2>/dev/null || true
 }
+
+if [ "$TEARDOWN" = true ]; then
+  if [ -n "$INSTANCE" ]; then
+    echo "This will remove the $CONTAINER_NAME container and its restart schedule."
+  else
+    echo "This will remove every kyber-battlefront container, all of their restart schedules and the KYBER server images."
+  fi
+  echo "Game files, mods and env files are not touched."
+
+  if [ -t 0 ]; then
+    read -r -p "Continue? [y/N] " answer
+    if [[ ! "$answer" =~ ^[Yy]$ ]]; then
+      echo "Cancelled."
+      exit 1
+    fi
+  fi
+
+  if [ -n "$INSTANCE" ]; then
+    remove_cron_schedule
+    docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    echo "Removed $CONTAINER_NAME and its restart schedule."
+    exit 0
+  fi
+
+  # Schedules first, so cron can't start a server again partway through
+  remove_cron_schedule "# kyber-battlefront"
+
+  # Instance containers by name, plus any other container made from the image
+  containers=$( { docker ps -aq --filter "name=^kyber-battlefront"; docker ps -aq --filter "ancestor=$KYBER_IMAGE"; } | sort -u)
+  if [ -n "$containers" ]; then
+    docker rm -f $containers >/dev/null
+  fi
+
+  # Includes older untagged copies left behind by previous pulls
+  images=$(docker images -q "$KYBER_IMAGE_REPO" | sort -u)
+  if [ -n "$images" ]; then
+    docker rmi -f $images >/dev/null
+  fi
+
+  echo "Removed $(echo "$containers" | grep -c .) container(s), $(echo "$images" | grep -c .) image(s) and all restart schedules."
+  exit 0
+fi
 
 if [ "$UNSCHEDULE" = true ]; then
   remove_cron_schedule
@@ -323,7 +376,6 @@ if [ -n "$KYBER_SERVER_PLUGINS_PATH" ]; then
 fi
 
 # Pull the latest server image so restarts pick up Kyber updates
-KYBER_IMAGE="ghcr.io/armchairdevelopers/kyber-server:latest"
 docker pull -q "$KYBER_IMAGE" || echo "Warning: failed to pull $KYBER_IMAGE, using the cached image."
 
 # Stop and remove any existing container (running or stopped) so the name is free
