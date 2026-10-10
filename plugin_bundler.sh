@@ -17,9 +17,6 @@ if ! command -v zip >/dev/null 2>&1; then
   exit 1
 fi
 
-# Remove all existing .kbplugin files before bundling
-find "$WORKING_DIR" -maxdepth 1 -name "*.kbplugin" -type f -delete
-
 # If KYBER_ENABLED_PLUGINS is not set, then define it to all directories in the working directory with a plugin.json file
 if [ -z "$KYBER_ENABLED_PLUGINS" ]; then
   PLUGINS=""
@@ -39,8 +36,10 @@ if [ -z "$KYBER_ENABLED_PLUGINS" ]; then
   exit 0
 fi
 
-# Loop through the list of enabled plugins from the .env file
+# Bundles are shared by every instance, so each one is written to a temporary
+# file and moved into place. A starting server never sees a missing bundle.
 IFS=',' read -ra PLUGINS <<< "$KYBER_ENABLED_PLUGINS"
+BUNDLED=()
 for PLUGIN in "${PLUGINS[@]}"; do
   # Reject plugin names containing path separators or the bare '..' component to prevent path traversal
   if [[ "$PLUGIN" == */* ]] || [[ "$PLUGIN" == ".." ]]; then
@@ -50,9 +49,23 @@ for PLUGIN in "${PLUGINS[@]}"; do
   PLUGIN_DIR="$WORKING_DIR/$PLUGIN"
   if [ -d "$PLUGIN_DIR" ] && [ -f "$PLUGIN_DIR/plugin.json" ]; then
     # README and globals (editor type hints) aren't used by the server
-    (cd "$PLUGIN_DIR" && zip -qr "$WORKING_DIR/$PLUGIN.kbplugin" . -x README.md globals.lua) || exit 1
-    echo "Created $WORKING_DIR/$PLUGIN.kbplugin"
+    BUNDLE="$WORKING_DIR/$PLUGIN.kbplugin"
+    rm -f "$BUNDLE.tmp"
+    (cd "$PLUGIN_DIR" && zip -qr "$BUNDLE.tmp" . -x README.md globals.lua) || { rm -f "$BUNDLE.tmp"; exit 1; }
+    mv -f "$BUNDLE.tmp" "$BUNDLE"
+    BUNDLED+=("$BUNDLE")
+    echo "Created $BUNDLE"
   else
     echo "Skipping $PLUGIN_DIR, no plugin.json found or directory does not exist."
   fi
+done
+
+# Remove bundles for plugins that are no longer enabled
+for BUNDLE in "$WORKING_DIR"/*.kbplugin; do
+  [ -f "$BUNDLE" ] || continue
+  for ENABLED in "${BUNDLED[@]}"; do
+    [ "$BUNDLE" = "$ENABLED" ] && continue 2
+  done
+  rm -f "$BUNDLE"
+  echo "Removed $BUNDLE"
 done

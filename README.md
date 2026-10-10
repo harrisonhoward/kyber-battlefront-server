@@ -11,25 +11,46 @@ This repository is to assist others in setting up their own server.
 - **CPU**: Intel Core i7-7700K @ 4.20GHz
 - **Memory**: 64 GB DDR4 (2x 16 GB @ 2666 MHz, 2x 16 GB @ 3600 MHz)
 
-## Start Server Flags
+## Configuration
 
-This is a list of supported flags for the `start_battlefront.sh` script.
+Server settings are set in `.env` (see [`.env.example`](.env.example)), or in an instance file when running [multiple instances](#multiple-instances).
 
-- `--server-name`: This allows you to override the server name specified in the `.env` file. This is useful if you want to have multiple servers running with different names.
-- `--mode` (default: `conquest`): This allows you to specify the game mode to run.
+- `KYBER_SERVER_NAME`: The server name shown in the server browser (max 40 characters).
+- `KYBER_SERVER_MODES` (default: `conquest`): The game modes to run.
     - Supported modes (Can be comma separated to combine the modes):
         - `conquest` (Conquest)
         - `galactic` (Galactic Assault)
-- `--eras` (default: `all`): This allows you to specify which Star Wars eras to include in map rotation.
+        - `all` (expands to `conquest,galactic`)
+- `KYBER_SERVER_ERAS` (default: `all`): Which Star Wars eras to include in map rotation.
     - Supported eras (Can be comma separated to combine eras):
         - `prequel`
         - `original`
         - `sequel`
         - `all` (expands to `prequel,original,sequel`)
     - Example combinations:
-        - `--mode conquest --eras prequel`
-        - `--mode conquest,galactic --eras prequel,original`
-- `--unschedule`: Removes the cron-based restart schedule and exits immediately without touching the running container. Use this when you want to stop the server from automatically restarting without restarting it first.
+        - `KYBER_SERVER_MODES="conquest"` with `KYBER_SERVER_ERAS="prequel"`
+        - `KYBER_SERVER_MODES="conquest,galactic"` with `KYBER_SERVER_ERAS="prequel,original"`
+
+## Start Server Flags
+
+This is a list of supported flags for the `start_battlefront.sh` script.
+
+- `--instance`: Runs the instance configured in `<id>.instance.env`. See [Multiple Instances](#multiple-instances).
+- `--unschedule`: Removes the cron-based restart schedule and exits immediately without touching the running container. Use this when you want to stop the server from automatically restarting without restarting it first. Combine with `--instance` to only remove that instance's schedule.
+
+## Multiple Instances
+
+Multiple servers can run at the same time from the same install and account. Shared settings (credentials, install path, plugins) stay in `.env`, and each instance has its own `<id>.instance.env` file that overrides what differs, usually the name and eras.
+
+1. Copy [`example.instance.env`](example.instance.env) to e.g. `prequel.instance.env` and set its values.
+2. Start it with `./start_battlefront.sh --instance prequel`.
+
+Each instance runs in its own container (`kyber-battlefront-<id>`) with its own restart schedule. Running without `--instance` uses the `kyber-battlefront` container and `.env` alone, as before. Plugins are shared between all instances.
+
+```bash
+docker logs -f kyber-battlefront-prequel   # follow an instance's logs
+./start_battlefront.sh --instance prequel --unschedule   # remove its restart schedule
+```
 
 ## Installation
 

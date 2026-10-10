@@ -3,62 +3,36 @@
 # Run from the script's directory so relative paths work from anywhere (e.g. cron)
 SCRIPT_DIR=$(cd "$(dirname "$(realpath "$0")")" && pwd)
 SCRIPT_PATH="$SCRIPT_DIR/$(basename "$0")"
-CRON_MARKER="# kyber-battlefront restart"
 cd "$SCRIPT_DIR" || exit 1
-
-if [ -f .env ]; then
-  source .env
-else
-  echo "Warning: no .env file found in $SCRIPT_DIR."
-fi
 
 # Print usage information
 usage() {
-  echo "Usage: $0 [--mode MODE] [--eras ERAS] [--server-name NAME] [--unschedule]"
+  echo "Usage: $0 [--instance ID] [--unschedule]"
   echo
   echo "Options:"
-  echo "  --mode MODE           Game mode to use (default: conquest)"
-  echo "  --eras ERAS           Eras to include: prequel,original,sequel,all (default: all)"
-  echo "  --server-name NAME    Server name to use"
+  echo "  --instance ID         Run the instance configured in ID.instance.env (default: .env only)"
   echo "  --unschedule          Remove the cron restart schedule and exit"
+  echo
+  echo "Server settings (name, modes, eras, ...) are set in .env or the instance file."
 }
 
 # Flags processing
-KYBER_SERVER_MODES="${KYBER_SERVER_MODES:-conquest}"
-KYBER_SERVER_ERAS="${KYBER_SERVER_ERAS:-all}"
+INSTANCE=""
+UNSCHEDULE=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --unschedule)
-      (crontab -l 2>/dev/null | grep -v "$CRON_MARKER") | crontab - 2>/dev/null || true
-      echo "Cron restart schedule removed."
-      exit 0
+      UNSCHEDULE=true
+      shift
       ;;
-    --mode)
+    --instance)
       if [ $# -lt 2 ] || [ -z "$2" ]; then
-        echo "Error: --mode requires a non-empty argument."
+        echo "Error: --instance requires a non-empty argument."
         usage
         exit 1
       fi
-      KYBER_SERVER_MODES="$2"
-      shift 2
-      ;;
-    --eras)
-      if [ $# -lt 2 ] || [ -z "$2" ]; then
-        echo "Error: --eras requires a non-empty argument."
-        usage
-        exit 1
-      fi
-      KYBER_SERVER_ERAS="$2"
-      shift 2
-      ;;
-    --server-name)
-      if [ $# -lt 2 ] || [ -z "$2" ]; then
-        echo "Error: --server-name requires a non-empty argument."
-        usage
-        exit 1
-      fi
-      KYBER_SERVER_NAME="$2"
+      INSTANCE="$2"
       shift 2
       ;;
     *)
@@ -68,6 +42,45 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Instance ids are used in the container name, cron entry and file name
+if [ -n "$INSTANCE" ] && [[ ! "$INSTANCE" =~ ^[A-Za-z0-9_-]+$ ]]; then
+  echo "Error: --instance may only contain letters, numbers, '-' and '_'."
+  exit 1
+fi
+
+# Each instance gets its own container and cron entry
+CONTAINER_NAME="kyber-battlefront${INSTANCE:+-$INSTANCE}"
+CRON_MARKER="# $CONTAINER_NAME restart"
+
+remove_cron_schedule() {
+  (crontab -l 2>/dev/null | grep -vF "$CRON_MARKER") | crontab - 2>/dev/null || true
+}
+
+if [ "$UNSCHEDULE" = true ]; then
+  remove_cron_schedule
+  echo "Cron restart schedule removed for $CONTAINER_NAME."
+  exit 0
+fi
+
+# Shared settings, then the instance's settings on top
+if [ -f .env ]; then
+  source .env
+else
+  echo "Warning: no .env file found in $SCRIPT_DIR."
+fi
+
+if [ -n "$INSTANCE" ]; then
+  INSTANCE_FILE="$INSTANCE.instance.env"
+  if [ ! -f "$INSTANCE_FILE" ]; then
+    echo "Error: $INSTANCE_FILE not found in $SCRIPT_DIR. See example.instance.env."
+    exit 1
+  fi
+  source "$INSTANCE_FILE"
+fi
+
+KYBER_SERVER_MODES="${KYBER_SERVER_MODES:-conquest}"
+KYBER_SERVER_ERAS="${KYBER_SERVER_ERAS:-all}"
 
 
 conquest_prequel_maps=(
@@ -121,6 +134,15 @@ if [ -z "$EA_EMAIL" ] || [ -z "$EA_PASSWORD" ] || [ -z "$KYBER_TOKEN" ] || [ -z 
   exit 1
 fi
 
+# Kyber limits server names to 40 characters. Counted in a UTF-8 locale so
+# multi-byte characters count once, even under cron's default locale.
+MAX_SERVER_NAME_LENGTH=40
+server_name_length=$(LC_ALL=C.UTF-8; echo "${#KYBER_SERVER_NAME}")
+if [ "$server_name_length" -gt "$MAX_SERVER_NAME_LENGTH" ]; then
+  echo "Error: KYBER_SERVER_NAME is $server_name_length characters, the limit is $MAX_SERVER_NAME_LENGTH: $KYBER_SERVER_NAME"
+  exit 1
+fi
+
 # If KYBER_MOD_FOLDER set then so does KYBER_MOD_FOLDER_SOURCE
 if [ -n "$KYBER_MOD_FOLDER" ] && [ -z "$KYBER_MOD_FOLDER_SOURCE" ]; then
   echo "KYBER_MOD_FOLDER_SOURCE must be set if KYBER_MOD_FOLDER is set."
@@ -171,6 +193,7 @@ IFS=',' read -ra raw_modes <<< "$KYBER_SERVER_MODES"
 IFS=',' read -ra raw_eras <<< "$KYBER_SERVER_ERAS"
 
 modes=()
+expand_all_modes=false
 for raw_mode in "${raw_modes[@]}"; do
   mode=$(trim_token "$raw_mode")
   if [ -z "$mode" ]; then
@@ -181,12 +204,19 @@ for raw_mode in "${raw_modes[@]}"; do
     conquest|galactic)
       modes+=("$mode")
       ;;
+    all)
+      expand_all_modes=true
+      ;;
     *)
-      echo "Unknown mode: $mode. Supported modes: conquest, galactic"
+      echo "Unknown mode: $mode. Supported modes: conquest, galactic, all"
       exit 1
       ;;
   esac
 done
+
+if [ "$expand_all_modes" = true ]; then
+  modes=(conquest galactic)
+fi
 
 if [ ${#modes[@]} -eq 0 ]; then
   echo "Error: no valid modes provided."
@@ -249,7 +279,7 @@ KYBER_MAP_ROTATION=$(printf "%s\n" "${maps[@]}" | shuf | base64 -w 0)
 MAXIMA_CREDENTIALS="$EA_EMAIL:$EA_PASSWORD"
 
 docker_args=(
-  --name kyber-battlefront
+  --name "$CONTAINER_NAME"
   --restart unless-stopped
   -dt
 )
@@ -297,14 +327,14 @@ KYBER_IMAGE="ghcr.io/armchairdevelopers/kyber-server:latest"
 docker pull -q "$KYBER_IMAGE" || echo "Warning: failed to pull $KYBER_IMAGE, using the cached image."
 
 # Stop and remove any existing container (running or stopped) so the name is free
-docker rm -f kyber-battlefront 2>/dev/null || true
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 
 docker run \
   "${docker_args[@]}" \
   "$KYBER_IMAGE" || { echo "Error: docker run failed. Cron not updated."; exit 1; }
 
 # Install or remove a cron job for scheduled daily restarts.
-# Set KYBER_RESTART_SCHEDULE in .env to a cron expression (e.g. "0 4 * * *") to enable.
+# Set KYBER_RESTART_SCHEDULE in .env (or the instance file) to a cron expression (e.g. "0 4 * * *") to enable.
 # Leave it unset or empty to remove any existing schedule.
 if [ -n "$KYBER_RESTART_SCHEDULE" ]; then
   # Validate: must be exactly 5 whitespace-separated fields, no newlines
@@ -312,14 +342,14 @@ if [ -n "$KYBER_RESTART_SCHEDULE" ]; then
     echo "Error: KYBER_RESTART_SCHEDULE must be a valid 5-field cron expression."
     exit 1
   fi
-  CRON_CMD="$KYBER_RESTART_SCHEDULE /bin/bash -c 'cd \"$SCRIPT_DIR\" && \"$SCRIPT_PATH\"' $CRON_MARKER"
-  (crontab -l 2>/dev/null | grep -v "$CRON_MARKER"; echo "$CRON_CMD") | crontab -
-  echo "Cron restart scheduled: $KYBER_RESTART_SCHEDULE"
+  CRON_CMD="$KYBER_RESTART_SCHEDULE /bin/bash -c 'cd \"$SCRIPT_DIR\" && \"$SCRIPT_PATH\"${INSTANCE:+ --instance $INSTANCE}' $CRON_MARKER"
+  (crontab -l 2>/dev/null | grep -vF "$CRON_MARKER"; echo "$CRON_CMD") | crontab -
+  echo "Cron restart scheduled for $CONTAINER_NAME: $KYBER_RESTART_SCHEDULE"
 else
-  (crontab -l 2>/dev/null | grep -v "$CRON_MARKER") | crontab - 2>/dev/null || true
+  remove_cron_schedule
 fi
 
 # Only follow logs when run interactively, otherwise cron runs would never exit
 if [ -t 1 ]; then
-  docker logs -f kyber-battlefront
+  docker logs -f "$CONTAINER_NAME"
 fi
