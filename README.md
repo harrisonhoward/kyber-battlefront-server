@@ -11,28 +11,31 @@ This repository is to assist others in setting up their own server.
 - **CPU**: Intel Core i7-7700K @ 4.20GHz
 - **Memory**: 64 GB DDR4 (2x 16 GB @ 2666 MHz, 2x 16 GB @ 3600 MHz)
 
-## Start Server Flags
+## Configuration
 
-This is a list of supported flags for the `start_battlefront.sh` script.
+Server settings are set in `.env` (see [`.env.example`](.env.example)), or in an instance file when running [multiple instances](#multiple-instances).
 
-- `--instance`: Runs the instance configured in `<id>.instance.env`. See [Multiple Instances](#multiple-instances).
-- `--server-name`: This allows you to override the server name specified in the `.env` file.
-- `--mode` (default: `conquest`): This allows you to specify the game mode to run.
+- `KYBER_SERVER_NAME`: The server name shown in the server browser.
+- `KYBER_SERVER_MODES` (default: `conquest`): The game modes to run.
     - Supported modes (Can be comma separated to combine the modes):
         - `conquest` (Conquest)
         - `galactic` (Galactic Assault)
-- `--eras` (default: `all`): This allows you to specify which Star Wars eras to include in map rotation.
+- `KYBER_SERVER_ERAS` (default: `all`): Which Star Wars eras to include in map rotation.
     - Supported eras (Can be comma separated to combine eras):
         - `prequel`
         - `original`
         - `sequel`
         - `all` (expands to `prequel,original,sequel`)
     - Example combinations:
-        - `--mode conquest --eras prequel`
-        - `--mode conquest,galactic --eras prequel,original`
-- `--unschedule`: Removes the cron-based restart schedule and exits immediately without touching the running container. Use this when you want to stop the server from automatically restarting without restarting it first. Combine with `--instance` to only remove that instance's schedule.
+        - `KYBER_SERVER_MODES="conquest"` with `KYBER_SERVER_ERAS="prequel"`
+        - `KYBER_SERVER_MODES="conquest,galactic"` with `KYBER_SERVER_ERAS="prequel,original"`
 
-> Scheduled restarts only re-run the script with `--instance`, so `--server-name`, `--mode` and `--eras` aren't kept after a restart. Use `.env` or an instance file for anything that should persist.
+## Start Server Flags
+
+This is a list of supported flags for the `start_battlefront.sh` script.
+
+- `--instance`: Runs the instance configured in `<id>.instance.env`. See [Multiple Instances](#multiple-instances).
+- `--unschedule`: Removes the cron-based restart schedule and exits immediately without touching the running container. Use this when you want to stop the server from automatically restarting without restarting it first. Combine with `--instance` to only remove that instance's schedule.
 
 ## Multiple Instances
 

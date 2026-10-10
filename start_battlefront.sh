@@ -7,22 +7,18 @@ cd "$SCRIPT_DIR" || exit 1
 
 # Print usage information
 usage() {
-  echo "Usage: $0 [--instance ID] [--mode MODE] [--eras ERAS] [--server-name NAME] [--unschedule]"
+  echo "Usage: $0 [--instance ID] [--unschedule]"
   echo
   echo "Options:"
-  echo "  --instance ID         Run the instance configured in ID.instance.env (default: no instance)"
-  echo "  --mode MODE           Game mode to use (default: conquest)"
-  echo "  --eras ERAS           Eras to include: prequel,original,sequel,all (default: all)"
-  echo "  --server-name NAME    Server name to use"
+  echo "  --instance ID         Run the instance configured in ID.instance.env (default: .env only)"
   echo "  --unschedule          Remove the cron restart schedule and exit"
+  echo
+  echo "Server settings (name, modes, eras, ...) are set in .env or the instance file."
 }
 
-# Flags processing, applied after the env files are loaded so they take priority
+# Flags processing
 INSTANCE=""
 UNSCHEDULE=false
-FLAG_MODES=""
-FLAG_ERAS=""
-FLAG_SERVER_NAME=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -30,18 +26,13 @@ while [[ $# -gt 0 ]]; do
       UNSCHEDULE=true
       shift
       ;;
-    --instance|--mode|--eras|--server-name)
+    --instance)
       if [ $# -lt 2 ] || [ -z "$2" ]; then
-        echo "Error: $1 requires a non-empty argument."
+        echo "Error: --instance requires a non-empty argument."
         usage
         exit 1
       fi
-      case "$1" in
-        --instance)    INSTANCE="$2" ;;
-        --mode)        FLAG_MODES="$2" ;;
-        --eras)        FLAG_ERAS="$2" ;;
-        --server-name) FLAG_SERVER_NAME="$2" ;;
-      esac
+      INSTANCE="$2"
       shift 2
       ;;
     *)
@@ -88,17 +79,8 @@ if [ -n "$INSTANCE" ]; then
   source "$INSTANCE_FILE"
 fi
 
-[ -n "$FLAG_MODES" ]       && KYBER_SERVER_MODES="$FLAG_MODES"
-[ -n "$FLAG_ERAS" ]        && KYBER_SERVER_ERAS="$FLAG_ERAS"
-[ -n "$FLAG_SERVER_NAME" ] && KYBER_SERVER_NAME="$FLAG_SERVER_NAME"
-
 KYBER_SERVER_MODES="${KYBER_SERVER_MODES:-conquest}"
 KYBER_SERVER_ERAS="${KYBER_SERVER_ERAS:-all}"
-
-# Scheduled restarts only re-run with --instance, so other flags would be lost
-if [ -n "$KYBER_RESTART_SCHEDULE" ] && [ -n "$FLAG_MODES$FLAG_ERAS$FLAG_SERVER_NAME" ]; then
-  echo "Warning: --mode, --eras and --server-name aren't kept by scheduled restarts. Set them in an instance file instead."
-fi
 
 
 conquest_prequel_maps=(
