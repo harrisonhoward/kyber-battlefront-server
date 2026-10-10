@@ -135,6 +135,9 @@ fi
 KYBER_SERVER_MODES="${KYBER_SERVER_MODES:-conquest}"
 KYBER_SERVER_ERAS="${KYBER_SERVER_ERAS:-all}"
 
+# The plugins need KYBER v2.0.0-beta10, which the stable channel doesn't serve yet
+KYBER_MODULE_CHANNEL="${KYBER_MODULE_CHANNEL:-ver/beta10}"
+
 
 conquest_prequel_maps=(
     "Mode1;S6_2/Geonosis_02/Levels/Geonosis_02/Geonosis_02"
