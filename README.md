@@ -15,7 +15,8 @@ This repository is to assist others in setting up their own server.
 
 This is a list of supported flags for the `start_battlefront.sh` script.
 
-- `--server-name`: This allows you to override the server name specified in the `.env` file. This is useful if you want to have multiple servers running with different names.
+- `--instance`: Runs the instance configured in `<id>.instance.env`. See [Multiple Instances](#multiple-instances).
+- `--server-name`: This allows you to override the server name specified in the `.env` file.
 - `--mode` (default: `conquest`): This allows you to specify the game mode to run.
     - Supported modes (Can be comma separated to combine the modes):
         - `conquest` (Conquest)
@@ -29,7 +30,23 @@ This is a list of supported flags for the `start_battlefront.sh` script.
     - Example combinations:
         - `--mode conquest --eras prequel`
         - `--mode conquest,galactic --eras prequel,original`
-- `--unschedule`: Removes the cron-based restart schedule and exits immediately without touching the running container. Use this when you want to stop the server from automatically restarting without restarting it first.
+- `--unschedule`: Removes the cron-based restart schedule and exits immediately without touching the running container. Use this when you want to stop the server from automatically restarting without restarting it first. Combine with `--instance` to only remove that instance's schedule.
+
+> Scheduled restarts only re-run the script with `--instance`, so `--server-name`, `--mode` and `--eras` aren't kept after a restart. Use `.env` or an instance file for anything that should persist.
+
+## Multiple Instances
+
+Multiple servers can run at the same time from the same install and account. Shared settings (credentials, install path, plugins) stay in `.env`, and each instance has its own `<id>.instance.env` file that overrides what differs, usually the name and eras.
+
+1. Copy [`example.instance.env`](example.instance.env) to e.g. `prequel.instance.env` and set its values.
+2. Start it with `./start_battlefront.sh --instance prequel`.
+
+Each instance runs in its own container (`kyber-battlefront-<id>`) with its own restart schedule. Running without `--instance` uses the `kyber-battlefront` container and `.env` alone, as before. Plugins are shared between all instances.
+
+```bash
+docker logs -f kyber-battlefront-prequel   # follow an instance's logs
+./start_battlefront.sh --instance prequel --unschedule   # remove its restart schedule
+```
 
 ## Installation
 

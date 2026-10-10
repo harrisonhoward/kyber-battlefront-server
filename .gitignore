@@ -7,3 +7,5 @@ mods
 
 # Do not expose
 .env
+*.instance.env
+!example.instance.env
