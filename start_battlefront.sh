@@ -134,6 +134,15 @@ if [ -z "$EA_EMAIL" ] || [ -z "$EA_PASSWORD" ] || [ -z "$KYBER_TOKEN" ] || [ -z 
   exit 1
 fi
 
+# Kyber limits server names to 40 characters. Counted in a UTF-8 locale so
+# multi-byte characters count once, even under cron's default locale.
+MAX_SERVER_NAME_LENGTH=40
+server_name_length=$(LC_ALL=C.UTF-8; echo "${#KYBER_SERVER_NAME}")
+if [ "$server_name_length" -gt "$MAX_SERVER_NAME_LENGTH" ]; then
+  echo "Error: KYBER_SERVER_NAME is $server_name_length characters, the limit is $MAX_SERVER_NAME_LENGTH: $KYBER_SERVER_NAME"
+  exit 1
+fi
+
 # If KYBER_MOD_FOLDER set then so does KYBER_MOD_FOLDER_SOURCE
 if [ -n "$KYBER_MOD_FOLDER" ] && [ -z "$KYBER_MOD_FOLDER_SOURCE" ]; then
   echo "KYBER_MOD_FOLDER_SOURCE must be set if KYBER_MOD_FOLDER is set."
