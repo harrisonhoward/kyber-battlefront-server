@@ -46,11 +46,6 @@ local function getCurrentEntry()
     return entries[MapRotation.GetCurrentEntryIndex() - 1]
 end
 
-if MapRotation == nil then
-    print("MapRotation is not available on this Kyber version. MapShuffler is disabled.")
-    return
-end
-
 -- Shuffle once the first level has loaded, as the rotation is populated by then
 EventManager.Listen("Level:Loaded", function()
     if hasShuffledOnStart then
