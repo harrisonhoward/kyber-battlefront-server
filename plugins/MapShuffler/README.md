@@ -7,7 +7,7 @@ Uses the [MapRotation](https://github.com/ArmchairDevelopers/KyberDocs/blob/main
 
 ## Supported Channel
 
-Any channel with the `MapRotation` library (added in the IG-88 update). If it is unavailable the plugin disables itself.
+`stable`
 
 ## Configuration
 
