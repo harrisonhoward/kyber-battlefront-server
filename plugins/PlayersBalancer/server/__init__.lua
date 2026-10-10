@@ -17,16 +17,21 @@ local function init()
     local kyberSettings = Console.GetSettings("Kyber")
     if kyberSettings ~= nil then
         kyberSettings.disableTeamBalancing = true
+        -- Shuffling is handled by TeamService:RandomiseTeams, which falls back to
+        -- the plugin shuffler when Kyber's would not work (low player counts)
+        kyberSettings.enableShuffleTeams = false
     end
     local wsSettings = Console.GetSettings("Whiteshark")
     if wsSettings ~= nil then
         wsSettings.autoBalanceTeamsOnNeutral = false
+        -- Kick after 5 minutes of no interactivity, 0 disables it
+        wsSettings.noInteractivityTimeoutTime = Config.enableAfkKick and 60 * 5 or 0
     end
     print("Disabled traditional team balancing in favour for PlayersBalancer's")
 
     -- If config shuffler not enabled then do not shuffle the teams
     if Config.enableShuffler == true then
-        TeamService:RandomiseTeams()
+        TeamService:RandomiseTeams(Config.useBuiltInShuffler)
     end
     TeamService:BalanceBots()
 end
