@@ -1,18 +1,20 @@
 #!/bin/bash
 
-source ./.env
-
-
-# This script will go through all directories relative to its location.
+# This script will go through all directories in the plugins directory next to it.
 # It will zip the contents of the each directory and name the zip file 'DIRNAME.kbplugin'.
 # kbplugin is for Kyber Star Wars Battlefront 2 server.
 
-# Get the directory of the script
-WORKING_DIR="$(pwd)"
+# Resolve paths from the script's directory so it works from anywhere
+SCRIPT_DIR=$(cd "$(dirname "$(realpath "$0")")" && pwd)
+WORKING_DIR="$SCRIPT_DIR/plugins"
 
-# Check if the directory we're in has a plugins directory then update WORKING_DIR to that
-if [ -d "$WORKING_DIR/plugins" ]; then
-  WORKING_DIR="$WORKING_DIR/plugins"
+if [ -f "$SCRIPT_DIR/.env" ]; then
+  source "$SCRIPT_DIR/.env"
+fi
+
+if ! command -v zip >/dev/null 2>&1; then
+  echo "Error: zip is required to bundle plugins. Install it (e.g. sudo apt install zip)."
+  exit 1
 fi
 
 # Remove all existing .kbplugin files before bundling
@@ -47,7 +49,8 @@ for PLUGIN in "${PLUGINS[@]}"; do
   fi
   PLUGIN_DIR="$WORKING_DIR/$PLUGIN"
   if [ -d "$PLUGIN_DIR" ] && [ -f "$PLUGIN_DIR/plugin.json" ]; then
-    (cd "$PLUGIN_DIR" && zip -r "$WORKING_DIR/$PLUGIN.kbplugin" .)
+    # README and globals (editor type hints) aren't used by the server
+    (cd "$PLUGIN_DIR" && zip -qr "$WORKING_DIR/$PLUGIN.kbplugin" . -x README.md globals.lua) || exit 1
     echo "Created $WORKING_DIR/$PLUGIN.kbplugin"
   else
     echo "Skipping $PLUGIN_DIR, no plugin.json found or directory does not exist."
