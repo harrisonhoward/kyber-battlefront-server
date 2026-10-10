@@ -15,7 +15,7 @@ This repository is to assist others in setting up their own server.
 
 Server settings are set in `.env` (see [`.env.example`](.env.example)), or in an instance file when running [multiple instances](#multiple-instances).
 
-- `KYBER_SERVER_NAME`: The server name shown in the server browser.
+- `KYBER_SERVER_NAME`: The server name shown in the server browser (max 40 characters).
 - `KYBER_SERVER_MODES` (default: `conquest`): The game modes to run.
     - Supported modes (Can be comma separated to combine the modes):
         - `conquest` (Conquest)
