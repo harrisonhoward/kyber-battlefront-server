@@ -1,8 +1,8 @@
 -- Tracks whether the rotation has been shuffled since the server started
 local hasShuffledOnStart = false
 
--- Attempts to find an order without the same level twice in a row, after
--- which the last shuffle is used (e.g. every entry shares a level)
+-- Best effort attempts to find an order without the same level twice in a row,
+-- after which the last shuffle is used (e.g. when most entries share a level)
 local MAX_SHUFFLE_ATTEMPTS = 20
 
 ---@param entries MapRotationEntry[]
@@ -43,11 +43,18 @@ local function shuffleRotation(currentEntry)
     end
 
     -- Avoid playing the same level twice in a row
+    local foundValidOrder = false
     for _ = 1, MAX_SHUFFLE_ATTEMPTS do
         shuffleEntries(entries)
         if not hasRepeatedLevel(entries, currentEntry) then
+            foundValidOrder = true
             break
         end
+    end
+    if not foundValidOrder then
+        print(string.format(
+            "Could not find a map order without repeated levels after %d attempts, the same map may play twice in a row.",
+            MAX_SHUFFLE_ATTEMPTS))
     end
 
     -- Clear requires the first entry and resets the rotation index
