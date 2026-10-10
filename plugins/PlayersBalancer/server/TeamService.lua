@@ -8,7 +8,7 @@ local PlayerService = require "PlayerService"
 ---@field GetPlayerCount fun(self: TeamService): number -- Player count without bots
 ---@field BalanceBots fun(self: TeamService, excludePlayer?: Player) -- Will ensure both teams have the same amount of players
 ---@field ResetBots fun(self: TeamService) -- Resets the bot counts and active gamemode back to 0
----@field RandomiseTeams fun(self: TeamService)
+---@field RandomiseTeams fun(self: TeamService, useBuiltInShuffler?: boolean) -- Built-in shuffler is only used above two players
 TeamService = {
 
     GetAutoPlayerSettings = function(self, silent)
@@ -106,7 +106,7 @@ TeamService = {
         ServerService.activeGameMode = nil
     end,
 
-    RandomiseTeams = function(self)
+    RandomiseTeams = function(self, useBuiltInShuffler)
         if ServerService.activeGameMode == nil then
             return
         end
@@ -131,6 +131,12 @@ TeamService = {
             return
         end
         Console.Execute("Kyber.Broadcast **KYBER:** Shuffling teams.")
+
+        -- Kyber's shuffler keeps parties/squads together
+        if useBuiltInShuffler == true then
+            Console.Execute("Kyber.ShuffleTeams")
+            return
+        end
 
         -- Fill the team list
         for i = 1, playerCount - (playerCount // 2), 1 do
