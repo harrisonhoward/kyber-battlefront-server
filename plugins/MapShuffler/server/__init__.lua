@@ -1,11 +1,36 @@
 -- Tracks whether the rotation has been shuffled since the server started
 local hasShuffledOnStart = false
 
----@param a MapRotationEntry
----@param b MapRotationEntry
+-- Attempts to find an order without the same level twice in a row, after
+-- which the last shuffle is used (e.g. every entry shares a level)
+local MAX_SHUFFLE_ATTEMPTS = 20
+
+---@param entries MapRotationEntry[]
+local function shuffleEntries(entries)
+    -- Fisher yates shuffle
+    for i = #entries, 2, -1 do
+        local j = math.random(i)
+        entries[i], entries[j] = entries[j], entries[i]
+    end
+end
+
+-- Levels are compared without the mode, as the same level can be in the
+-- rotation for multiple modes (e.g. Yavin in conquest and galactic assault)
+---@param entries MapRotationEntry[]
+---@param currentEntry MapRotationEntry|nil
 ---@return boolean
-local function isSameEntry(a, b)
-    return a.level == b.level and a.mode == b.mode
+local function hasRepeatedLevel(entries, currentEntry)
+    if currentEntry ~= nil and entries[1].level == currentEntry.level then
+        return true
+    end
+
+    for i = 2, #entries do
+        if entries[i].level == entries[i - 1].level then
+            return true
+        end
+    end
+
+    return false
 end
 
 -- Shuffles the rotation and resets it so the first shuffled entry loads next.
@@ -17,16 +42,12 @@ local function shuffleRotation(currentEntry)
         return
     end
 
-    -- Fisher yates shuffle
-    for i = #entries, 2, -1 do
-        local j = math.random(i)
-        entries[i], entries[j] = entries[j], entries[i]
-    end
-
-    -- Avoid playing the same map twice in a row
-    if currentEntry ~= nil and isSameEntry(entries[1], currentEntry) then
-        local j = math.random(2, #entries)
-        entries[1], entries[j] = entries[j], entries[1]
+    -- Avoid playing the same level twice in a row
+    for _ = 1, MAX_SHUFFLE_ATTEMPTS do
+        shuffleEntries(entries)
+        if not hasRepeatedLevel(entries, currentEntry) then
+            break
+        end
     end
 
     -- Clear requires the first entry and resets the rotation index
