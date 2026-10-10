@@ -5,9 +5,9 @@ This took a huge inspiration from [BotsBalancer Plugin Example](https://github.c
 
 ## Supported Channel
 
-_This will require modification to work on the beta channel_
+Requires KYBER v2.0.0-beta10 or newer. Use `ver/beta10` until the `stable` channel serves v2.0.0-beta10 (it currently serves v2.0.0-beta8).
 
-`stable`
+`ver/beta10`, `stable`
 
 ## Configuration
 

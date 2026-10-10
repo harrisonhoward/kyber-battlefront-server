@@ -7,7 +7,9 @@ Uses the [MapRotation](https://github.com/ArmchairDevelopers/KyberDocs/blob/main
 
 ## Supported Channel
 
-`stable`
+Requires KYBER v2.0.0-beta10 or newer. Use `ver/beta10` until the `stable` channel serves v2.0.0-beta10 (it currently serves v2.0.0-beta8).
+
+`ver/beta10`, `stable`
 
 ## Configuration
 
