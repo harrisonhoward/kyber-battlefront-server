@@ -19,7 +19,7 @@ KYBER_PLUGIN_USE_WHITELIST_GAMEMODES="true" # If set to "true", the plugin will 
 KYBER_PLUGIN_ENABLE_SHUFFLER="true" # If set to "true", the plugin will shuffle players between teams to balance them. Default is "true".
 KYBER_PLUGIN_USE_BUILTIN_SHUFFLER="true" # If set to "true", shuffling uses Kyber's built-in shuffler (keeps parties/squads together) when there are more than 2 players; at 2 or fewer the plugin swaps teams instead, as Kyber's shuffler often leaves them unchanged. If "false", the plugin's own shuffler is always used. Only applies when KYBER_PLUGIN_ENABLE_SHUFFLER is "true". Default is "true".
 KYBER_PLUGIN_ENABLE_AFK_KICK="true" # If set to "true", players are kicked after 5 minutes of no interactivity. If "false", AFK kicking is disabled (overrides the in-game setting). Default is "true".
-KYBER_PLUGIN_BOT_DIFFICULTY="knight" # Bot aim difficulty, matching the launcher titles: "easy", "medium", "hard", "knight" or "master". Default is "knight".
+KYBER_PLUGIN_BOT_DIFFICULTY="hard" # Bot aim difficulty, matching the launcher titles: "easy", "medium", "hard", "knight" or "master". Default is "hard".
 KYBER_PLUGIN_BOT_HERO_CHANCE="0.25" # A value between 0 and 1 for the chance a bot picks a hero when it can afford one. 0 stops bots picking heroes. Default is 0.25.
 KYBER_PLUGIN_BOT_HERO_PLAYER_LIMIT="8" # Bots stop picking heroes once this many players (not bots) are online. 0 disables the limit, so bots can always pick heroes. Default is 8.
 ```
@@ -33,3 +33,15 @@ Bot difficulty sets the bots' aim noise scale (lower is more accurate):
 | `hard`     | 6               |
 | `medium`   | 9               |
 | `easy`     | 12              |
+
+## Console Commands
+
+The bot settings can be changed while the server is running from the server console in the KYBER Launcher. Running a command without a value prints the current one. Changes last until the server restarts, when the env vars apply again.
+
+| Command | Example |
+| ------- | ------- |
+| `PlayersBalancer.BotDifficulty <easy\|medium\|hard\|knight\|master>` | `PlayersBalancer.BotDifficulty easy` |
+| `PlayersBalancer.BotHeroChance <0-1>` | `PlayersBalancer.BotHeroChance 0.5` |
+| `PlayersBalancer.BotHeroPlayerLimit <players>` | `PlayersBalancer.BotHeroPlayerLimit 0` |
+
+Changing the difficulty is broadcast to players.

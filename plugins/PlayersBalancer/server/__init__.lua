@@ -3,6 +3,7 @@ local ServerService = require "ServerService"
 local TeamService = require "TeamService"
 local PlayerService = require "PlayerService"
 local RejoinService = require "RejoinService"
+local CommandService = require "CommandService"
 
 local function init()
     print(
@@ -37,6 +38,8 @@ local function init()
     TeamService:BalanceBots()
     TeamService:ApplyBotSettings()
 end
+
+CommandService:Register()
 
 EventManager.Listen("Server:Init", function()
     ServerService.serverInitialised = true

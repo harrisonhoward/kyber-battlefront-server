@@ -103,9 +103,10 @@ TeamService = {
         end
 
         -- The level and some mods reset these, so only log when they actually change
-        if settings.AimNoiseScale ~= Config.botAimNoiseScale then
-            settings.AimNoiseScale = Config.botAimNoiseScale
-            print(string.format("Set bot aim noise scale to %d", Config.botAimNoiseScale))
+        local aimNoiseScale = Config.botDifficultyAimNoise[Config.botDifficulty]
+        if settings.AimNoiseScale ~= aimNoiseScale then
+            settings.AimNoiseScale = aimNoiseScale
+            print(string.format("Set bot aim noise scale to %d (%s)", aimNoiseScale, Config.botDifficulty))
         end
         -- Leave heroes to the players once enough of them are online
         local heroChance = Config.botHeroChance
