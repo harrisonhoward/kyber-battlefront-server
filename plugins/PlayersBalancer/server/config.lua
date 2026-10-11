@@ -16,7 +16,7 @@ local function optionalEnv(name)
     return value
 end
 
-local botDifficulty = optionalEnv("KYBER_PLUGIN_BOT_DIFFICULTY") or "master"
+local botDifficulty = optionalEnv("KYBER_PLUGIN_BOT_DIFFICULTY") or "knight"
 local botHeroChance = optionalEnv("KYBER_PLUGIN_BOT_HERO_CHANCE") or "0.25"
 local botHeroPlayerLimit = optionalEnv("KYBER_PLUGIN_BOT_HERO_PLAYER_LIMIT") or "8"
 
