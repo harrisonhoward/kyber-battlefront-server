@@ -17,6 +17,14 @@ local function optionalEnv(name)
 end
 
 -- Parsers shared by the env vars and the console commands, nil when invalid
+local function parseBotDensity(value)
+    local density = tonumber(value)
+    if density == nil or density < 0 or density > 1 then
+        return nil
+    end
+    return density
+end
+
 local function parseBotDifficulty(value)
     local difficulty = string.lower(value)
     if botDifficultyAimNoise[difficulty] == nil then
@@ -43,7 +51,7 @@ end
 
 Config = {
     -- Percentage of bots to max players. Too many bots can be annoying.
-    botDensity = tonumber(os.getenv("KYBER_PLUGIN_BOT_DENSITY")) or 0.9,
+    botDensity = parseBotDensity(optionalEnv("KYBER_PLUGIN_BOT_DENSITY") or "0.9"),
     -- In case you want to allow any gamemode
     useWhitelistGamemodes = (os.getenv("KYBER_PLUGIN_USE_WHITELIST_GAMEMODES") or "true") == "true",
     -- Will use the plugin shuffler rather than Kyber's default one.
@@ -62,13 +70,14 @@ Config = {
     botHeroPlayerLimit = parseBotHeroPlayerLimit(optionalEnv("KYBER_PLUGIN_BOT_HERO_PLAYER_LIMIT") or "8"),
 
     botDifficultyAimNoise = botDifficultyAimNoise,
+    ParseBotDensity = parseBotDensity,
     ParseBotDifficulty = parseBotDifficulty,
     ParseBotHeroChance = parseBotHeroChance,
     ParseBotHeroPlayerLimit = parseBotHeroPlayerLimit,
 }
 
 -- Validation
-if Config.botDensity < 0 or Config.botDensity > 1 then
+if Config.botDensity == nil then
     error("Bot density must be between 0 and 1.")
 end
 if Config.botDifficulty == nil then
