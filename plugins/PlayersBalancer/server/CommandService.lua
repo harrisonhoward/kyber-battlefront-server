@@ -12,11 +12,30 @@ local function trim(args)
 end
 
 ---@class CommandService
+---@field BotDensity fun(self: CommandService, args: string)
 ---@field BotDifficulty fun(self: CommandService, args: string)
 ---@field BotHeroChance fun(self: CommandService, args: string)
 ---@field BotHeroPlayerLimit fun(self: CommandService, args: string)
 ---@field Register fun(self: CommandService) -- Registers the PlayersBalancer console commands
 CommandService = {
+
+    BotDensity = function(self, args)
+        local value = trim(args)
+        if value == "" then
+            print(string.format("Bot density is %.2f", Config.botDensity))
+            return
+        end
+
+        local density = Config.ParseBotDensity(value)
+        if density == nil then
+            print("Bot density must be between 0 and 1.")
+            return
+        end
+
+        Config.botDensity = density
+        TeamService:BalanceBots()
+        Console.Execute(string.format("Kyber.Broadcast **KYBER:** Bot backfill capacity set to %.0f%%.", density * 100))
+    end,
 
     BotDifficulty = function(self, args)
         local value = trim(args)
@@ -73,6 +92,9 @@ CommandService = {
     end,
 
     Register = function(self)
+        Console.Register("PlayersBalancer", "BotDensity",
+            "Sets how full (0 to 1) bots fill the server. No value prints the current one.",
+            self, self.BotDensity)
         Console.Register("PlayersBalancer", "BotDifficulty",
             "Sets the bot difficulty: easy, medium, hard, knight or master. No value prints the current one.",
             self, self.BotDifficulty)

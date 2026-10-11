@@ -36,12 +36,13 @@ Bot difficulty sets the bots' aim noise scale (lower is more accurate):
 
 ## Console Commands
 
-The bot settings can be changed while the server is running from the server console in the KYBER Launcher. Running a command without a value prints the current one. Changes last until the server restarts, when the env vars apply again.
+The bot settings (density, difficulty and heroes) can be changed while the server is running from the server console in the KYBER Launcher. Running a command without a value prints the current one. Changes last until the server restarts, when the env vars apply again.
 
 | Command | Example |
 | ------- | ------- |
+| `PlayersBalancer.BotDensity <0-1>` | `PlayersBalancer.BotDensity 0.5` |
 | `PlayersBalancer.BotDifficulty <easy\|medium\|hard\|knight\|master>` | `PlayersBalancer.BotDifficulty easy` |
 | `PlayersBalancer.BotHeroChance <0-1>` | `PlayersBalancer.BotHeroChance 0.5` |
 | `PlayersBalancer.BotHeroPlayerLimit <players>` | `PlayersBalancer.BotHeroPlayerLimit 0` |
 
-Changing the difficulty is broadcast to players.
+Changing the density or difficulty is broadcast to players.
