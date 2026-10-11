@@ -9,15 +9,29 @@ local MAX_REJOIN_TEAM_DIFFERENCE = 2
 
 ---@class RejoinService
 ---@field leftPlayers table<number, PlayerSnapshot> -- Players who left during the current level, by playerId
+---@field spectators table<number, boolean> -- Connected spectators, by playerId
+---@field MarkSpectator fun(self: RejoinService, player: Player) -- Called when a spectator joins, so they are not remembered
 ---@field Remember fun(self: RejoinService, player: Player) -- Stores the leaving player's team and stats
 ---@field RestoreTeam fun(self: RejoinService, player: Player, teamCounts: {team1: number, team2: number}): boolean -- False if the player did not leave this level
 ---@field RestoreStats fun(self: RejoinService, player: Player) -- Restores the stats and forgets the player
 ---@field Clear fun(self: RejoinService) -- Forgets every player, called when the level ends
 RejoinService = {
     leftPlayers = {},
+    spectators = {},
+
+    MarkSpectator = function(self, player)
+        self.spectators[player.playerId] = true
+    end,
 
     Remember = function(self, player)
-        -- Bots and spectators are not on a playable team
+        -- Spectators still have a team, and may already be gone from
+        -- PlayerManager.GetPlayers when they disconnect, so use the join-time check
+        if self.spectators[player.playerId] then
+            self.spectators[player.playerId] = nil
+            return
+        end
+
+        -- Bots are not remembered
         if player.isBot or (player.team ~= 1 and player.team ~= 2) then
             return
         end
@@ -68,6 +82,7 @@ RejoinService = {
         print(string.format("Restored stats for rejoining player %s", player.name))
     end,
 
+    -- Spectators stay connected between levels, so they are not cleared here
     Clear = function(self)
         self.leftPlayers = {}
     end,
