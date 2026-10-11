@@ -16,9 +16,30 @@ local function optionalEnv(name)
     return value
 end
 
-local botDifficulty = optionalEnv("KYBER_PLUGIN_BOT_DIFFICULTY") or "knight"
-local botHeroChance = optionalEnv("KYBER_PLUGIN_BOT_HERO_CHANCE") or "0.25"
-local botHeroPlayerLimit = optionalEnv("KYBER_PLUGIN_BOT_HERO_PLAYER_LIMIT") or "8"
+-- Parsers shared by the env vars and the console commands, nil when invalid
+local function parseBotDifficulty(value)
+    local difficulty = string.lower(value)
+    if botDifficultyAimNoise[difficulty] == nil then
+        return nil
+    end
+    return difficulty
+end
+
+local function parseBotHeroChance(value)
+    local chance = tonumber(value)
+    if chance == nil or chance < 0 or chance > 1 then
+        return nil
+    end
+    return chance
+end
+
+local function parseBotHeroPlayerLimit(value)
+    local limit = tonumber(value)
+    if limit == nil or limit < 0 or limit % 1 ~= 0 then
+        return nil
+    end
+    return math.tointeger(limit)
+end
 
 Config = {
     -- Percentage of bots to max players. Too many bots can be annoying.
@@ -33,25 +54,30 @@ Config = {
     useBuiltInShuffler = (os.getenv("KYBER_PLUGIN_USE_BUILTIN_SHUFFLER") or "true") == "true",
     -- Kick players after 5 minutes of no interactivity
     enableAfkKick = (os.getenv("KYBER_PLUGIN_ENABLE_AFK_KICK") or "true") == "true",
-    -- Bot aim noise scale from the difficulty name
-    botAimNoiseScale = botDifficultyAimNoise[string.lower(botDifficulty)],
+    -- Bot difficulty by launcher name, see botDifficultyAimNoise
+    botDifficulty = parseBotDifficulty(optionalEnv("KYBER_PLUGIN_BOT_DIFFICULTY") or "hard"),
     -- Chance a bot picks a hero when it can afford one
-    botHeroChance = tonumber(botHeroChance),
+    botHeroChance = parseBotHeroChance(optionalEnv("KYBER_PLUGIN_BOT_HERO_CHANCE") or "0.25"),
     -- Bots stop taking heroes once this many players are online, 0 disables the limit
-    botHeroPlayerLimit = tonumber(botHeroPlayerLimit),
+    botHeroPlayerLimit = parseBotHeroPlayerLimit(optionalEnv("KYBER_PLUGIN_BOT_HERO_PLAYER_LIMIT") or "8"),
+
+    botDifficultyAimNoise = botDifficultyAimNoise,
+    ParseBotDifficulty = parseBotDifficulty,
+    ParseBotHeroChance = parseBotHeroChance,
+    ParseBotHeroPlayerLimit = parseBotHeroPlayerLimit,
 }
 
 -- Validation
 if Config.botDensity < 0 or Config.botDensity > 1 then
     error("Bot density must be between 0 and 1.")
 end
-if Config.botAimNoiseScale == nil then
+if Config.botDifficulty == nil then
     error("Bot difficulty must be one of: easy, medium, hard, knight, master.")
 end
-if Config.botHeroChance == nil or Config.botHeroChance < 0 or Config.botHeroChance > 1 then
+if Config.botHeroChance == nil then
     error("Bot hero chance must be between 0 and 1.")
 end
-if Config.botHeroPlayerLimit == nil or Config.botHeroPlayerLimit < 0 or Config.botHeroPlayerLimit % 1 ~= 0 then
+if Config.botHeroPlayerLimit == nil then
     error("Bot hero player limit must be a whole number of 0 or more.")
 end
 if (os.getenv("KYBER_MODULE_CHANNEL") or "stable") ~= "stable" then
