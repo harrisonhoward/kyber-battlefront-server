@@ -106,6 +106,12 @@ EventManager.Listen("ServerPlayer:Joined", function(player)
         return
     end
 
+    -- Joined also fires for spectators, who must not be put on a team
+    if PlayerService:IsSpectator(player) then
+        print(string.format("Player %s joined as a spectator, skipping balancing.", player.name))
+        return
+    end
+
     -- Exclude the joining player as they may already be assigned a default team
     PlayerService:BalancePlayer(player, TeamService:GetTeamCounts(player))
     TeamService:BalanceBots()
