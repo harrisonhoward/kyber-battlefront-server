@@ -1,6 +1,7 @@
 # PlayersBalancer
 
 This plugins automatically balances, shuffles players and fills empty slots with bots.\
+Players who leave and rejoin during the same level go back to their old team, unless that would put it more than two players ahead, in which case they are balanced as normal. Their score, kills, assists, deaths and battlepoints are restored when they rejoin. All of this is forgotten when the level completes.\
 This took a huge inspiration from [BotsBalancer Plugin Example](https://github.com/ArmchairDevelopers/PluginExamples/tree/main/BotBalancer).
 
 ## Supported Channel

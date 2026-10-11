@@ -2,6 +2,7 @@ local Config = require "config"
 local ServerService = require "ServerService"
 local TeamService = require "TeamService"
 local PlayerService = require "PlayerService"
+local RejoinService = require "RejoinService"
 
 local function init()
     print(
@@ -46,6 +47,9 @@ EventManager.Listen("ResourceManager:PartitionLoaded", function(_name, instance)
 end)
 
 EventManager.Listen("Level:Loaded", function(_levelName, gameModeId)
+    -- Players who left the previous level start fresh
+    RejoinService:Clear()
+
     if ServerService.gameModes[gameModeId] == nil then
         print(
             string.format("Loaded into an unknown game mode with id '%s'", gameModeId)
@@ -73,6 +77,7 @@ end)
 -- Cleanup from the previous level before the next one loads
 EventManager.Listen("Level:Complete", function()
     TeamService:ResetBots()
+    RejoinService:Clear()
 end)
 
 -- Level:Loaded fires when a level starts loading, and the level resets the bot
@@ -113,7 +118,11 @@ EventManager.Listen("ServerPlayer:Joined", function(player)
     end
 
     -- Exclude the joining player as they may already be assigned a default team
-    PlayerService:BalancePlayer(player, TeamService:GetTeamCounts(player))
+    local teamCounts = TeamService:GetTeamCounts(player)
+    if not RejoinService:RestoreTeam(player, teamCounts) then
+        PlayerService:BalancePlayer(player, teamCounts)
+    end
+    RejoinService:RestoreStats(player)
     TeamService:BalanceBots()
 end)
 
@@ -122,6 +131,8 @@ EventManager.Listen("ServerPlayer:Disconnect", function(player)
         print("ServerPlayer:Disconnect event triggered with nil player, skipping.")
         return
     end
+
+    RejoinService:Remember(player)
 
     -- Exclude the leaving player as they may still be in the player list
     TeamService:BalanceBots(player)
