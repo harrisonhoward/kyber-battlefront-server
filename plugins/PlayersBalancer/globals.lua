@@ -1,7 +1,7 @@
 ---@meta
 
 ---@alias Player
----| { isBot: boolean, team: number, name: string, SetTeam: fun(self: Player, team: number) }
+---| { isBot: boolean, team: number, name: string, playerId: number, SetTeam: fun(self: Player, team: number) }
 
 ---@class EventManagerClass
 ---@field Listen fun(event: string, callback: function, context?: any)
