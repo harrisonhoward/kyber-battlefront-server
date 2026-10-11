@@ -35,6 +35,7 @@ local function init()
         TeamService:RandomiseTeams(Config.useBuiltInShuffler)
     end
     TeamService:BalanceBots()
+    TeamService:ApplyBotSettings()
 end
 
 EventManager.Listen("Server:Init", function()
@@ -81,8 +82,8 @@ EventManager.Listen("Level:Complete", function()
 end)
 
 -- Level:Loaded fires when a level starts loading, and the level resets the bot
--- counts once it has loaded. Re-apply them periodically so they're restored
--- (BalanceBots only changes and logs them when they differ).
+-- counts and settings once it has loaded. Re-apply them periodically so they're
+-- restored (both only change and log them when they differ).
 local BALANCE_INTERVAL_SECONDS = 5
 local timeSinceBalance = 0
 EventManager.Listen("Server:UpdatePre", function(delta)
@@ -98,6 +99,7 @@ EventManager.Listen("Server:UpdatePre", function(delta)
     timeSinceBalance = 0
 
     TeamService:BalanceBots()
+    TeamService:ApplyBotSettings()
 end)
 
 EventManager.Listen("ServerPlayer:Joined", function(player)
