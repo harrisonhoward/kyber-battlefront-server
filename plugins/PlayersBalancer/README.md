@@ -5,8 +5,6 @@ This took a huge inspiration from [BotsBalancer Plugin Example](https://github.c
 
 ## Supported Channel
 
-_This will require modification to work on the beta channel_
-
 `stable`
 
 ## Configuration
