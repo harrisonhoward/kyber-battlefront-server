@@ -1,6 +1,7 @@
 ---@class PlayerService
 ---@field SwapPlayersTeam fun(self: PlayerService, player: Player)
 ---@field BalancePlayer fun(self: PlayerService, player: Player, teamCounts: {team1: number, team2: number}) -- Balances the player to a team
+---@field IsSpectator fun(self: PlayerService, player: Player): boolean -- Spectators are not in PlayerManager.GetPlayers
 PlayerService = {
     SwapPlayersTeam = function(self, player)
         if player.isBot then
@@ -29,6 +30,19 @@ PlayerService = {
         print(
             string.format("Balanced player %s to team %d", player.name, player.team)
         )
+    end,
+
+    IsSpectator = function(self, player)
+        -- Kyber does not expose the spectator flag, but spectators are kept in a
+        -- separate list that GetPlayers does not return
+        local players = PlayerManager.GetPlayers()
+        for _, other in ipairs(players) do
+            if other.playerId == player.playerId then
+                return false
+            end
+        end
+
+        return true
     end,
 }
 
