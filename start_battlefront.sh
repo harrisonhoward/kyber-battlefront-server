@@ -159,7 +159,9 @@ conquest_sequel_maps=(
 )
 
 galactic_prequel_maps=(
-    "PlanetaryBattles;S5_1/Levels/MP/Geonosis_01/Geonosis_01"
+    # Geonosis is left out as bots can't drive the AT-TEs, so the level stalls
+    # without enough players on the clone team (see issue #29)
+    # "PlanetaryBattles;S5_1/Levels/MP/Geonosis_01/Geonosis_01"
     "PlanetaryBattles;Levels/MP/Kamino_01/Kamino_01"
     "PlanetaryBattles;Levels/MP/Naboo_01/Naboo_01"
     "PlanetaryBattles;Levels/MP/Kashyyyk_01/Kashyyyk_01"
