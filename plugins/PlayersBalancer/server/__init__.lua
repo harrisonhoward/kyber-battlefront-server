@@ -75,6 +75,26 @@ EventManager.Listen("Level:Complete", function()
     TeamService:ResetBots()
 end)
 
+-- Level:Loaded fires when a level starts loading, and the level resets the bot
+-- counts once it has loaded. Re-apply them periodically so they're restored
+-- (BalanceBots only changes and logs them when they differ).
+local BALANCE_INTERVAL_SECONDS = 5
+local timeSinceBalance = 0
+EventManager.Listen("Server:UpdatePre", function(delta)
+    -- Balancer is not active for this game mode
+    if ServerService.activeGameMode == nil then
+        return
+    end
+
+    timeSinceBalance = timeSinceBalance + delta
+    if timeSinceBalance < BALANCE_INTERVAL_SECONDS then
+        return
+    end
+    timeSinceBalance = 0
+
+    TeamService:BalanceBots()
+end)
+
 EventManager.Listen("ServerPlayer:Joined", function(player)
     if player == nil then
         print("ServerPlayer:Joined event triggered with nil player, skipping.")
