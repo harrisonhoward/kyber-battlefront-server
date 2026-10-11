@@ -111,14 +111,16 @@ EventManager.Listen("ServerPlayer:Joined", function(player)
         return
     end
 
-    -- Balancer is not active for this game mode
-    if ServerService.activeGameMode == nil then
+    -- Joined also fires for spectators, who must not be put on a team. Checked
+    -- before the game mode so they are always tracked for RejoinService.
+    if PlayerService:IsSpectator(player) then
+        RejoinService:MarkSpectator(player)
+        print(string.format("Player %s joined as a spectator, skipping balancing.", player.name))
         return
     end
 
-    -- Joined also fires for spectators, who must not be put on a team
-    if PlayerService:IsSpectator(player) then
-        print(string.format("Player %s joined as a spectator, skipping balancing.", player.name))
+    -- Balancer is not active for this game mode
+    if ServerService.activeGameMode == nil then
         return
     end
 
