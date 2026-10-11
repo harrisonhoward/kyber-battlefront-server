@@ -7,6 +7,7 @@ local PlayerService = require "PlayerService"
 ---@field GetTeamCounts fun(self: TeamService, excludePlayer?: Player): { team1: number, team2: number } -- Excludes bots and the optional player
 ---@field GetPlayerCount fun(self: TeamService): number -- Player count without bots
 ---@field BalanceBots fun(self: TeamService, excludePlayer?: Player) -- Will ensure both teams have the same amount of players
+---@field ApplyBotSettings fun(self: TeamService) -- Applies the configured bot difficulty and hero chance (0 at the hero player limit)
 ---@field ResetBots fun(self: TeamService) -- Resets the bot counts and active gamemode back to 0
 ---@field RandomiseTeams fun(self: TeamService, useBuiltInShuffler?: boolean) -- Built-in shuffler is only used above two players
 TeamService = {
@@ -93,6 +94,30 @@ TeamService = {
 
         balanceTeam("team1", "forceFillGameplayBotsTeam1")
         balanceTeam("team2", "forceFillGameplayBotsTeam2")
+    end,
+
+    ApplyBotSettings = function(self)
+        local settings = self:GetAutoPlayerSettings()
+        if settings == nil then
+            return
+        end
+
+        -- The level and some mods reset these, so only log when they actually change
+        local aimNoiseScale = Config.botDifficultyAimNoise[Config.botDifficulty]
+        if settings.AimNoiseScale ~= aimNoiseScale then
+            settings.AimNoiseScale = aimNoiseScale
+            print(string.format("Set bot aim noise scale to %d (%s)", aimNoiseScale, Config.botDifficulty))
+        end
+        -- Leave heroes to the players once enough of them are online
+        local heroChance = Config.botHeroChance
+        if Config.botHeroPlayerLimit > 0 and self:GetPlayerCount() >= Config.botHeroPlayerLimit then
+            heroChance = 0
+        end
+        -- Stored as a float, so compare with a tolerance to avoid re-applying every time
+        if math.abs((settings.HeroSpawnProbability_Gameplay or -1) - heroChance) > 0.0001 then
+            settings.HeroSpawnProbability_Gameplay = heroChance
+            print(string.format("Set bot hero spawn probability to %.2f", heroChance))
+        end
     end,
 
     ResetBots = function(self)

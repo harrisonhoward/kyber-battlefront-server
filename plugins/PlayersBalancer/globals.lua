@@ -14,4 +14,5 @@ PlayerManager = PlayerManager
 ---@class ConsoleClass
 ---@field GetSettings fun(setting: string): table|nil
 ---@field Execute fun(command: string)
+---@field Register fun(group: string, name: string, description: string, inst: table, callback: fun(self: table, args: string))
 Console = Console
